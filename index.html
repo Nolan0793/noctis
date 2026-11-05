@@ -519,7 +519,7 @@ var start={x:55,z:49},HOUSELIST=[];
 })();
 
 /* a small gap in the boundary wall leads out to a tiny walled yard with the G18 */
-var OUT={on:false,cx0:0,cx1:0,cz0:0,cz1:0,x0:0,x1:0,z0:0,z1:0,gx0:0,gx1:0,gz0:0,gz1:0,gx:0,gz:0,ix:0,iz:0,nx:0,ny:1,nz:0,item:null};
+var OUT={dir:0,exit:0,on:false,cx0:0,cx1:0,cz0:0,cz1:0,x0:0,x1:0,z0:0,z1:0,gx0:0,gx1:0,gz0:0,gz1:0,gx:0,gz:0,ix:0,iz:0,nx:0,ny:1,nz:0,item:null};
 (function(){
   var reach=new Uint8Array(W*H),q=[],sx=Math.floor(start.x/CELL),sz=Math.floor(start.z/CELL),h,d4=[[1,0],[-1,0],[0,1],[0,-1]];
   function g0(x,z){return x<0||z<0||x>=W||z>=H||G[z*W+x];}
@@ -544,7 +544,7 @@ var OUT={on:false,cx0:0,cx1:0,cz0:0,cz1:0,x0:0,x1:0,z0:0,z1:0,gx0:0,gx1:0,gz0:0,
   OUT.gx=gx;OUT.gz=gz;OUT.gx0=gx*CELL;OUT.gx1=OUT.gx0+CELL;OUT.gz0=gz*CELL;OUT.gz1=OUT.gz0+CELL;
   OUT.ix=(OUT.x0+OUT.x1)/2;OUT.iz=(OUT.z0+OUT.z1)/2;
   clearWall(gx,gz);
-  OUT.on=true;
+  OUT.dir=best.dir;OUT.on=true;
 })();
 function outIn(x,z){return (x>=OUT.x0&&x<OUT.x1&&z>=OUT.z0&&z<OUT.z1)||(x>=OUT.gx0&&x<OUT.gx1&&z>=OUT.gz0&&z<OUT.gz1);}
 /* shots fired from the yard: stop at the yard walls (5 m tall) unless they clear them */
@@ -554,6 +554,7 @@ function outRay(ox,oy,oz,dx,dy,dz,tMax){
     var nt=Math.min(tMax,t+.25),x=ox+dx*nt,y=oy+dy*nt,z=oz+dz*nt;
     if(y<0)return -1;
     if(!outIn(x,z)){
+      if(x>=0&&z>=0&&x<W*CELL&&z<H*CELL){var l0=t,h0=nt,k0;for(k0=0;k0<7;k0++){var m0=(l0+h0)/2;if(outIn(ox+dx*m0,oz+dz*m0))l0=m0;else h0=m0;}OUT.exit=h0;return -2;}
       if(y>=5)return -1;
       var lo=t,hi=nt;
       for(k=0;k<7;k++){var m=(lo+hi)/2;if(outIn(ox+dx*m,oz+dz*m))lo=m;else hi=m;}
@@ -678,7 +679,18 @@ function terrainT(ox,oy,oz,dx,dy,dz,tMax){
     prevT=tt;if(tt>=tMax)return -1;
   }
 }
+function inGrid(x,z){return x>=0&&z>=0&&x<W*CELL&&z<H*CELL;}
+/* line of sight between the map and the yard: only through the gap in the boundary wall */
+function outLOS(x0,z0,x1,z1){
+  var a=inGrid(x0,z0),b=inGrid(x1,z1);
+  if(!a&&!b)return true;
+  var ix=a?x0:x1,iz=a?z0:z1,ox=a?x1:x0,oz=a?z1:z0,d=OUT.dir,t,cx,cz,lo,hi;
+  if(d===0||d===1){var bx=d===0?0:W*CELL;if(Math.abs(ox-ix)<1e-6)return false;t=(bx-ix)/(ox-ix);cz=iz+(oz-iz)*t;lo=OUT.gz0;hi=OUT.gz1;if(t<0||t>1||cz<lo||cz>=hi)return false;cx=bx+(d===0?.06:-.06);cz=cz;}
+  else{var bz=d===2?0:H*CELL;if(Math.abs(oz-iz)<1e-6)return false;t=(bz-iz)/(oz-iz);cx=ix+(ox-ix)*t;lo=OUT.gx0;hi=OUT.gx1;if(t<0||t>1||cx<lo||cx>=hi)return false;cz=bz+(d===2?.06:-.06);}
+  return hasLOS(ix,iz,cx,cz);
+}
 function hasLOS(x0,z0,x1,z1){
+  if(OUT.on&&(!inGrid(x0,z0)||!inGrid(x1,z1)))return outLOS(x0,z0,x1,z1);
   var dx=x1-x0,dz=z1-z0,d=Math.hypot(dx,dz);
   if(d<0.01)return true;
   rayGrid(x0,z0,dx/d,dz/d,d);
@@ -697,6 +709,7 @@ function lvLOS(x,z,ey){
 var flow=new Int16Array(W*H), queue=new Int32Array(W*H), NB4X=[1,-1,0,0], NB4Z=[0,0,1,-1];
 function bfsField(arr,px,pz,maxD){
   arr.fill(-1);
+  if(OUT.on&&(px<0||pz<0||px>=W*CELL||pz>=H*CELL)){px=OUT.gx*CELL+1;pz=OUT.gz*CELL+1;}
   var ix=Math.max(0,Math.min(W-1,Math.floor(px/CELL))), iz=Math.max(0,Math.min(H-1,Math.floor(pz/CELL))),head=0,tail=0,s0=iz*W+ix;
   if(G[s0]){var s1=-1;for(var q=0;q<4;q++){var ax=ix+NB4X[q],az=iz+NB4Z[q];if(ax>=0&&az>=0&&ax<W&&az<H&&!G[az*W+ax]){s1=az*W+ax;break;}}if(s1<0)return;s0=s1;}
   queue[tail++]=s0;arr[s0]=0;
@@ -1768,6 +1781,7 @@ function addHole(x,y,z,nx,ny,nz){
 var ETYPE={
   grunt:{hp:150,speed:3.4,scale:1.15,body:0x4d5a3c,pants:0x3a4430,vest:0x2b3326,helm:0x39452e,eye:0xff8a3d,ranged:true,hold:10,range:24,windup:.38,burst:1,bint:.09,dmg:4,acc:.86,cd:[.9,1.5],score:100,melee:false,coin:45},
   rusher:{hp:120,speed:5.8,scale:1.1,body:0x6a3a3a,pants:0x2f2a2a,vest:0x3a2626,helm:0x1d1a1a,eye:0xff3fa4,ranged:false,hold:0,range:0,windup:.3,burst:1,bint:.1,dmg:9,acc:1,cd:[.8,1.1],score:80,melee:true,coin:35},
+  boss:{hp:900,speed:0,scale:1.75,body:0x5a2a2a,pants:0x2a1c1c,vest:0x3b1414,helm:0x241010,eye:0xff1a1a,ranged:true,hold:0,range:24,windup:.45,burst:2,bint:.09,dmg:5,acc:.82,cd:[1,1.6],score:1500,melee:false,coin:500},
   heavy:{hp:600,speed:2.3,scale:1.4,body:0x55524a,pants:0x3b3a35,vest:0x24292e,helm:0x2c3136,eye:0xff2d3d,ranged:true,hold:13,range:26,windup:.6,burst:1,bint:.1,dmg:5,acc:.88,cd:[1.4,2],score:350,melee:false,coin:140}
 };
 var mMetal=new THREE.MeshPhongMaterial({color:0x15181c,shininess:40,specular:0x445566});
@@ -1806,10 +1820,12 @@ for(var ei=0;ei<22;ei++){var eb=buildEnemy();eb.active=false;eb.dying=false;eb.p
 /* ---- enemy AI helpers ---- */
 var _sx=0,_sz=0;
 function stepField(field,x,z){
-  var cx=Math.floor(x/CELL),cz=Math.floor(z/CELL),bv=field[cz*W+cx],bx=cx,bz=cz;
+  var cx=Math.floor(x/CELL),cz=Math.floor(z/CELL);
+  if(cx<0||cz<0||cx>=W||cz>=H){_sx=0;_sz=0;return false;}
+  var bv=field[cz*W+cx],bx=cx,bz=cz;
   if(bv<0)bv=9999;
   for(var oz=-1;oz<=1;oz++)for(var ox=-1;ox<=1;ox++){
-    if(!ox&&!oz)continue;var nx=cx+ox,nz=cz+oz;if(solid(nx,nz))continue;
+    if(!ox&&!oz)continue;var nx=cx+ox,nz=cz+oz;if(nx<0||nz<0||nx>=W||nz>=H||solid(nx,nz))continue;
     if(ox&&oz&&(solid(cx+ox,cz)||solid(cx,cz+oz)))continue;
     var v=field[nz*W+nx];if(v>=0&&v<bv){bv=v;bx=nx;bz=nz;}
   }
@@ -1872,28 +1888,28 @@ function pickSpawn(){
   return best;
 }
 function afterBurst(e){
-  var def=e.def;
+  var def=e.def;if(e.guard)return;
   if(e.type==='heavy'){if(e.hp<def.hp*.3&&Math.random()<.5)tryCover(e);return;}
   e.engShots++;
   if(e.wantCover||e.hp<def.hp*.5||e.engShots>=2+((Math.random()*2)|0)){if(!tryCover(e))e.engShots=0;}
 }
 
-function spawnEnemy(type){
+function spawnEnemy(type,pos,guard){
   var e=null,i;for(i=0;i<enemies.length;i++)if(!enemies[i].active){e=enemies[i];break;}
   if(!e)return false;
-  var sp=pickSpawn();if(!sp)return false;
+  var sp=pos||pickSpawn();if(!sp)return false;
   var def=ETYPE[type];
   e.active=true;e.dying=false;e.type=type;e.def=def;e.s=def.scale;e.hp=def.hp;e.x=sp.x;e.z=sp.z;e.chkT=0;
   e.cd=1+Math.random();e.wind=0;e.burstLeft=0;e.burstT=0;e.burstIdx=0;e.melee=0;e.flash=0;e._f=false;e.t=Math.random()*10;e.rise=0;e.los=false;e.losT=0;
   e.strafe=Math.random()<.5?1:-1;e.strafeT=1+Math.random()*2;e.dt=0;e.face=0;
-  e.mode='advance';e.modeT=0;e.h=1;e.crouch=false;e.cvX=0;e.cvZ=0;e.tx=0;e.tz=0;e.engShots=0;e.gotHit=0;e.flankT=2+Math.random()*3;e.wantCover=false;e.jink=Math.random()*6;
+  e.guard=!!guard;e.mode=guard?'engage':'advance';e.modeT=0;e.h=1;e.crouch=false;e.cvX=0;e.cvZ=0;e.tx=0;e.tz=0;e.engShots=0;e.gotHit=0;e.flankT=2+Math.random()*3;e.wantCover=false;e.jink=Math.random()*6;
   e.flanker=type==='grunt'&&Math.random()<.45;
   e.bodyM.color.setHex(def.body);e.pantsM.color.setHex(def.pants);e.vestM.color.setHex(def.vest);e.helmM.color.setHex(def.helm);e.eyeM.color.setHex(def.eye);
   e.skinM.color.setHex(SKINS[(Math.random()*SKINS.length)|0]);setFlash(e,0);
   e.g.scale.set(e.s,e.s,e.s);e.g.visible=true;e.g.rotation.set(0,0,0);e.gy=groundY(e.x,e.z);e.g.position.set(e.x,e.gy-2,e.z);
   e.knife.visible=def.melee;e.gun.visible=!def.melee;e.pack.visible=!def.melee;
   e.armL.rotation.set(0,0,0);e.armR.rotation.set(0,0,0);
-  ws.alive++;return true;
+  if(!guard)ws.alive++;return true;
 }
 function damageEnemy(e,amount,head){
   e.hp-=amount;e.flash=.09;stats.hits++;e.gotHit=1.5;
@@ -1902,12 +1918,13 @@ function damageEnemy(e,amount,head){
   if(e.hp<=0)killEnemy(e,head);
 }
 function killEnemy(e,head){
-  e.dying=true;e.dt=0;ws.alive--;stats.kills++;
+  e.dying=true;e.dt=0;if(!e.guard)ws.alive--;stats.kills++;
   combo++;comboT=4;var mult=1+Math.min(4,Math.floor((combo-1)/3));
   var pts_=(e.def.score+(head?40:0))*mult,cg=e.def.coin+(head?10:0);score+=pts_;coins+=cg;
   var pop=$('pop');pop.textContent='+'+pts_+'  ◆'+cg;pop.classList.remove('go');void pop.offsetWidth;pop.classList.add('go');
   emit(e.x,1.2*e.s,e.z,24,4.5,.75,.08,.06,.8,9);emit(e.x,1.4*e.s,e.z,8,3.5,.5,.5,.5,.5,6);smoke(e.x,.8*e.s,e.z,3,1,.25,.2,.2,1.2,.4);
   sfx('kill');
+  if(e.guard){toast('보스 처치!  G18을 챙기세요',2200);dropPickup(e.x+.6,e.z,0);dropPickup(e.x-.6,e.z,1);}
   var r=Math.random();
   if(r<.28)dropPickup(e.x,e.z,0);else if(r<.62)dropPickup(e.x,e.z,1);
 }
@@ -1934,7 +1951,8 @@ function updateEnemy(e,dt){
   e.modeT-=dt;
   var mx=0,mz=0,speedMul=1,firing=e.wind>0||e.burstLeft>0;
   /* ---- decision ---- */
-  if(def.melee){
+  if(e.guard){mx=0;mz=0;speedMul=0;e.mode='engage';e.crouch=false;}
+  else if(def.melee){
     if(e.melee>0)speedMul=.2;
     if(e.los&&dist<30){
       mx=dx/dist;mz=dz/dist;
@@ -2065,22 +2083,42 @@ function Hypot2(a,b){return Math.sqrt(a*a+b*b);}
 
 /* ---------- shooting ---------- */
 var TR={t:0,type:0,e:null,head:false,nx:0,ny:0,nz:0};
-function trace(ox,oy,oz,dx,dy,dz,range){
-  var tMax=range,type=0,hl=Math.hypot(dx,dz),nx=0,ny=0,nz=0,t;
-  if(OUT.on&&(ox<0||oz<0||ox>=W*CELL||oz>=H*CELL)){
-    var to=outRay(ox,oy,oz,dx,dy,dz,tMax);
-    if(to>=0&&to<tMax){tMax=to;type=1;nx=OUT.nx;ny=OUT.ny;nz=OUT.nz;}
-    t=terrainT(ox,oy,oz,dx,dy,dz,tMax);
-    if(t>=0&&t<tMax){tMax=t;type=2;nx=0;ny=1;nz=0;}
-  }else{
+var GP={t:0,type:0,nx:0,ny:0,nz:0,edge:false};
+function gridPart(ox,oy,oz,dx,dy,dz,range){
+  var tMax=range,type=0,hl=Math.hypot(dx,dz),nx=0,ny=0,nz=0,t,edge=false;
   if(hl>1e-6){
     rayWall(ox,oy,oz,dx/hl,dz/hl,dy/hl,range*hl);
-    if(rgSide>=0){t=rgD/hl;if(t<tMax){tMax=t;type=1;if(rgSide===2)ny=1;else{nx=rgSide===0?-Math.sign(dx):0;nz=rgSide===1?-Math.sign(dz):0;}}}
+    if(rgSide>=0){t=rgD/hl;if(t<tMax){tMax=t;type=1;if(rgSide===2)ny=1;else{nx=rgSide===0?-Math.sign(dx):0;nz=rgSide===1?-Math.sign(dz):0;}
+      if(OUT.on&&rgSide<2){var hx=ox+dx*t+dx/hl*.05,hz=oz+dz*t+dz/hl*.05;if(!inGrid(hx,hz)&&outIn(hx,hz))edge=true;}}}
   }
   t=terrainT(ox,oy,oz,dx,dy,dz,tMax);
-  if(t>=0&&t<tMax){tMax=t;type=2;nx=0;ny=1;nz=0;}
+  if(t>=0&&t<tMax){tMax=t;type=2;nx=0;ny=1;nz=0;edge=false;}
   var sbT=slabT(ox,oy,oz,dx,dy,dz,tMax);
-  if(sbT>=0&&sbT<tMax){tMax=sbT;type=2;nx=0;ny=dy<0?1:-1;nz=0;}
+  if(sbT>=0&&sbT<tMax){tMax=sbT;type=2;nx=0;ny=dy<0?1:-1;nz=0;edge=false;}
+  GP.t=tMax;GP.type=type;GP.nx=nx;GP.ny=ny;GP.nz=nz;GP.edge=edge;
+}
+function trace(ox,oy,oz,dx,dy,dz,range){
+  var tMax=range,type=0,nx=0,ny=0,nz=0,t;
+  if(OUT.on&&!inGrid(ox,oz)){
+    var to=outRay(ox,oy,oz,dx,dy,dz,tMax);
+    if(to===-2){
+      var t0=OUT.exit+.02;gridPart(ox+dx*t0,oy+dy*t0,oz+dz*t0,dx,dy,dz,Math.max(0,tMax-t0));
+      tMax=t0+GP.t;type=GP.type;nx=GP.nx;ny=GP.ny;nz=GP.nz;
+    }else{
+      if(to>=0&&to<tMax){tMax=to;type=1;nx=OUT.nx;ny=OUT.ny;nz=OUT.nz;}
+      t=terrainT(ox,oy,oz,dx,dy,dz,tMax);
+      if(t>=0&&t<tMax){tMax=t;type=2;nx=0;ny=1;nz=0;}
+    }
+  }else{
+    gridPart(ox,oy,oz,dx,dy,dz,range);
+    tMax=GP.t;type=GP.type;nx=GP.nx;ny=GP.ny;nz=GP.nz;
+    if(GP.edge){
+      var hl2=Math.hypot(dx,dz),t1=GP.t+.06/hl2,rr=outRay(ox+dx*t1,oy+dy*t1,oz+dz*t1,dx,dy,dz,Math.max(0,range-t1));
+      tMax=range;type=0;nx=nz=0;ny=0;
+      if(rr>=0&&t1+rr<tMax){tMax=t1+rr;type=1;nx=OUT.nx;ny=OUT.ny;nz=OUT.nz;}
+      t=terrainT(ox,oy,oz,dx,dy,dz,tMax);
+      if(t>=0&&t<tMax){tMax=t;type=2;nx=0;ny=1;nz=0;}
+    }
   }
   var hitE=null,isHead=false,hitR=null;
   if(MP.on){
@@ -2641,7 +2679,7 @@ function newGame(){slotFree=false;$('pcw').classList.remove('free');
   ws.n=0;ws.toSpawn=0;ws.alive=0;ws.inter=2.2;
   fcx=-1;firing=false;latch=false;adsHeld=false;
   if(MP.on){mpLoadout();mpSpawn();toast('데스매치 시작',1600);}
-  else toast('준비하라',1800);
+  else{toast('준비하라',1800);if(OUT.on){var bgx=OUT.gx*CELL+CELL/2,bgz=OUT.gz*CELL+CELL/2,bvx=OUT.ix-bgx,bvz=OUT.iz-bgz,bl=Math.hypot(bvx,bvz)||1;spawnEnemy('boss',{x:OUT.ix+bvx/bl*1.5,z:OUT.iz+bvz/bl*1.5},true);}}
 }
 function lockPointer(){
   if(touchMode)return;
