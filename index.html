@@ -519,7 +519,7 @@ var start={x:55,z:49},HOUSELIST=[];
 })();
 
 /* a small gap in the boundary wall leads out to a tiny walled yard with the G18 */
-var OUT={dir:0,exit:0,on:false,cx0:0,cx1:0,cz0:0,cz1:0,x0:0,x1:0,z0:0,z1:0,gx0:0,gx1:0,gz0:0,gz1:0,gx:0,gz:0,ix:0,iz:0,nx:0,ny:1,nz:0,item:null};
+var OUT={cage:false,cageG:null,dir:0,exit:0,on:false,cx0:0,cx1:0,cz0:0,cz1:0,x0:0,x1:0,z0:0,z1:0,gx0:0,gx1:0,gz0:0,gz1:0,gx:0,gz:0,ix:0,iz:0,nx:0,ny:1,nz:0,item:null};
 (function(){
   var reach=new Uint8Array(W*H),q=[],sx=Math.floor(start.x/CELL),sz=Math.floor(start.z/CELL),h,d4=[[1,0],[-1,0],[0,1],[0,-1]];
   function g0(x,z){return x<0||z<0||x>=W||z>=H||G[z*W+x];}
@@ -610,6 +610,7 @@ function slabT(ox,oy,oz,dx,dy,dz,tMax){
   return best;
 }
 function collides(x,z,r){
+  if(OUT.cage&&Math.abs(x-OUT.ix)<1.12+r&&Math.abs(z-OUT.iz)<1.12+r)return true;
   var x0=Math.floor((x-r)/CELL),x1=Math.floor((x+r)/CELL),z0=Math.floor((z-r)/CELL),z1=Math.floor((z+r)/CELL);
   for(var iz=z0;iz<=z1;iz++)for(var ix=x0;ix<=x1;ix++){
     if(!solid(ix,iz))continue;
@@ -1400,6 +1401,14 @@ if(OUT.on){(function(){
   var gl=new THREE.Sprite(new THREE.SpriteMaterial({map:glowTex,color:0xffa640,blending:THREE.AdditiveBlending,transparent:true,depthWrite:false}));gl.scale.set(2.2,2.2,1);it.add(gl);
   var pl=new THREE.PointLight(0xffa640,.9,9,2);pl.position.set(OUT.ix,1.8,OUT.iz);scene.add(pl);
   OUT.item=it;
+  var cg=new THREE.Group(),mc=new THREE.MeshPhongMaterial({color:0x4a5058,shininess:40,specular:0x889099}),hs=1.05,bi,bt;
+  for(bi=-3;bi<=3;bi++){bt=bi*hs/3;
+    part(cg,mc,.07,2,.07,OUT.ix+bt,1,OUT.iz-hs);part(cg,mc,.07,2,.07,OUT.ix+bt,1,OUT.iz+hs);
+    part(cg,mc,.07,2,.07,OUT.ix-hs,1,OUT.iz+bt);part(cg,mc,.07,2,.07,OUT.ix+hs,1,OUT.iz+bt);}
+  part(cg,mc,2.2,.09,.09,OUT.ix,2,OUT.iz-hs);part(cg,mc,2.2,.09,.09,OUT.ix,2,OUT.iz+hs);part(cg,mc,.09,.09,2.2,OUT.ix-hs,2,OUT.iz);part(cg,mc,.09,.09,2.2,OUT.ix+hs,2,OUT.iz);
+  part(cg,mc,2.2,.09,.09,OUT.ix,.6,OUT.iz-hs);part(cg,mc,2.2,.09,.09,OUT.ix,.6,OUT.iz+hs);part(cg,mc,.09,.09,2.2,OUT.ix-hs,.6,OUT.iz);part(cg,mc,.09,.09,2.2,OUT.ix+hs,.6,OUT.iz);
+  part(cg,mc,2.3,.1,2.3,OUT.ix,2.05,OUT.iz);
+  scene.add(cg);OUT.cageG=cg;OUT.cage=true;
   var lm=new THREE.Mesh(BOX,wm);lm.scale.set(CELL,2.8,CELL);lm.position.set((OUT.gx+.5)*CELL,3.6,(OUT.gz+.5)*CELL);scene.add(lm);
 })();}
 
@@ -1924,7 +1933,7 @@ function killEnemy(e,head){
   var pop=$('pop');pop.textContent='+'+pts_+'  ◆'+cg;pop.classList.remove('go');void pop.offsetWidth;pop.classList.add('go');
   emit(e.x,1.2*e.s,e.z,24,4.5,.75,.08,.06,.8,9);emit(e.x,1.4*e.s,e.z,8,3.5,.5,.5,.5,.5,6);smoke(e.x,.8*e.s,e.z,3,1,.25,.2,.2,1.2,.4);
   sfx('kill');
-  if(e.guard){toast('보스 처치!  G18을 챙기세요',2200);dropPickup(e.x+.6,e.z,0);dropPickup(e.x-.6,e.z,1);}
+  if(e.guard){OUT.cage=false;if(OUT.cageG)OUT.cageG.visible=false;toast('보스 처치!  새장이 열렸다',2200);dropPickup(e.x+.6,e.z,0);dropPickup(e.x-.6,e.z,1);}
   var r=Math.random();
   if(r<.28)dropPickup(e.x,e.z,0);else if(r<.62)dropPickup(e.x,e.z,1);
 }
@@ -2285,7 +2294,7 @@ function wavesUpdate(dt){
   }
 }
 function bsUpdate(dt){
-  if(OUT.on&&!own[5]&&Math.abs(P.y)<1.2&&Math.hypot(P.x-OUT.ix,P.z-OUT.iz)<1.6){
+  if(OUT.on&&!OUT.cage&&!own[5]&&Math.abs(P.y)<1.2&&Math.hypot(P.x-OUT.ix,P.z-OUT.iz)<1.6){
     own[5]=true;wm_[5]=WEAPONS[5].mag;wr_[5]=WEAPONS[5].reserve;
     sfx('pick');toast('숨겨진 무기  GLOCK G18 획득!',2400);refreshSlots();switchWeapon(5);
   }
@@ -2678,8 +2687,9 @@ function newGame(){slotFree=false;$('pcw').classList.remove('free');
   pickups.forEach(function(p){p.active=false;p.m.visible=false;});
   ws.n=0;ws.toSpawn=0;ws.alive=0;ws.inter=2.2;
   fcx=-1;firing=false;latch=false;adsHeld=false;
+  if(OUT.on&&MP.on){OUT.cage=false;if(OUT.cageG)OUT.cageG.visible=false;}
   if(MP.on){mpLoadout();mpSpawn();toast('데스매치 시작',1600);}
-  else{toast('준비하라',1800);if(OUT.on){var bgx=OUT.gx*CELL+CELL/2,bgz=OUT.gz*CELL+CELL/2,bvx=OUT.ix-bgx,bvz=OUT.iz-bgz,bl=Math.hypot(bvx,bvz)||1;spawnEnemy('boss',{x:OUT.ix+bvx/bl*1.5,z:OUT.iz+bvz/bl*1.5},true);}}
+  else{toast('준비하라',1800);if(OUT.on){OUT.cage=true;if(OUT.cageG)OUT.cageG.visible=true;var bgx=OUT.gx*CELL+CELL/2,bgz=OUT.gz*CELL+CELL/2,bvx=OUT.ix-bgx,bvz=OUT.iz-bgz,bl=Math.hypot(bvx,bvz)||1;spawnEnemy('boss',{x:OUT.ix+bvx/bl*1.5,z:OUT.iz+bvz/bl*1.5},true);}}
 }
 function lockPointer(){
   if(touchMode)return;
