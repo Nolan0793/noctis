@@ -3222,9 +3222,10 @@ function zoomFov(f,ad,Z){var fz=Z>1?2*Math.atan(Math.tan(f*Math.PI/360)/Z)*180/M
 function frame(now){
   requestAnimationFrame(frame);
   var dt=(now-last)/1000;last=now;if(!(dt>0))return;if(dt>.1)dt=.1;
-  if(state==='playing'){
+  var simOn=state==='playing'||(MP.on&&(state==='paused'||state==='shop'));
+  if(simOn){
     acc+=dt;var n=0;
-    while(acc>=STEP&&n<8){update(STEP);acc-=STEP;n++;if(state!=='playing')break;}
+    while(acc>=STEP&&n<8){update(STEP);acc-=STEP;n++;if(!(state==='playing'||(MP.on&&(state==='paused'||state==='shop'))))break;}
     if(n>=8)acc=0;
   }
   /* arrow keys look */
@@ -3233,7 +3234,7 @@ function frame(now){
     if(kx||ky)look(kx*dt*520,ky*dt*420);
   }
   if(MP.on)mpTick(dt);
-  visual(dt,state==='playing'?acc/STEP:1);
+  visual(dt,simOn?acc/STEP:1);
   fpsAcc+=dt;fpsN++;
   if(fpsAcc>=.5){fpsShow=Math.round(fpsN/fpsAcc);setT('fps',fpsShow+' fps · '+ratio.toFixed(2)+'x');fpsAcc=0;fpsN=0;}
   adaptT+=dt;adaptN++;
