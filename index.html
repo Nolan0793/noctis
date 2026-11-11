@@ -3201,7 +3201,7 @@ function renderShop(){
   }
   sec(list,'보급');
   var full=true;for(var k=0;k<6;k++)if(own[k]&&wr_[k]<WEAPONS[k].maxRes)full=false;if(own[6]&&wm_[6]+wr_[6]<RMAX)full=false;
-  srow(list,'탄약 보급','보유한 모든 총의 예비 탄약을 가득 채웁니다 (RPG 로켓 포함, 최대 7발) · 로켓은 적 처치로도 획득',full?'가득 참':'◆ '+AMMOP,function(){
+  srow(list,'탄약 보급','보유한 모든 총의 예비 탄약을 가득 채웁니다 (RPG 로켓 포함, 최대 7발)',full?'가득 참':'◆ '+AMMOP,function(){
     if(coins<AMMOP)return;coins-=AMMOP;for(var k=0;k<6;k++)if(own[k])wr_[k]=WEAPONS[k].maxRes;if(own[6])wr_[6]=Math.max(wr_[6],RMAX-wm_[6]);sfx('pick');renderShop();
   },full||coins<AMMOP);
   srow(list,'의료 키트','체력 +50 (최대 100)',P.hp>=100?'체력 가득':'◆ 120',function(){
