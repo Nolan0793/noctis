@@ -1773,14 +1773,9 @@ function ambInit(){
     }
     var w=loop('bandpass',420,.5);AMB.windG=w.g;AMB.windF=w.f;
     var w2=loop('highpass',2400,.5);AMB.leafG=w2.g;
-    var r=loop('highpass',3200,.4);AMB.rainG=r.g;AMB.rainF=r.f;
+    var r=loop('bandpass',2800,.35);AMB.rainG=r.g;AMB.rainF=r.f;
     var rl=loop('lowpass',900,.5);AMB.rainLow=rl.g;
-    var io=AC.createOscillator();io.type='sine';io.frequency.value=4300;
-    var ig=AC.createGain();ig.gain.value=0;
-    var lf=AC.createOscillator();lf.type='square';lf.frequency.value=38;var lg=AC.createGain();lg.gain.value=.5;
-    var lm=AC.createGain();lm.gain.value=.5;
-    lf.connect(lg);lg.connect(ig.gain);io.connect(ig);ig.connect(AMB.master);io.start();lf.start();
-    AMB.insG=ig;AMB.insO=io;AMB.lfo=lf;AMB.insBase=ig;
+    AMB.cricT=3;AMB.dropT=0;
     AMB.ready=true;
   }catch(e){AMB.ready=false;}
 }
@@ -1820,14 +1815,18 @@ function ambUpdate(dt){
   AMB.windF.frequency.value=260+380*wind*(.6+AMB.gust*.8)-ind*110;
   var lg=(ENV.season===3?.0:.05)*wind*(.5+AMB.gust)*(ENV.season===1||ENV.season===0||ENV.season===2?1:0)*open;
   AMB.leafG.gain.value+=(lg-AMB.leafG.gain.value)*k;
-  var rg=ENV.rain*(.22+.2*ENV.storm)*(ind>.5?.62:1);
-  AMB.rainG.gain.value+=(rg-AMB.rainG.gain.value)*k;AMB.rainF.frequency.value=3000-ind*1500;
+  var rg=ENV.rain*(.13+.12*ENV.storm)*(ind>.5?.62:1);
+  AMB.rainG.gain.value+=(rg-AMB.rainG.gain.value)*k;AMB.rainF.frequency.value=2800-ind*1300;
   AMB.rainLow.gain.value+=(ENV.rain*(.18+.18*ind)-AMB.rainLow.gain.value)*k;
   var night=1-ENV.dayL,warm=[.5,1,.55,0][ENV.season],ig=night*warm*(1-ENV.rain)*(1-ENV.fog*.4)*.012*(1-ind*.6);
   if(ENV.season===3)ig=0;
-  AMB.insG.gain.value+=(ig-AMB.insG.gain.value)*k;
-  AMB.insO.frequency.value=4000+Math.sin(ENV.t0*.07)*200;
-  AMB.lfo.frequency.value=28+Math.sin(ENV.t0*.05)*4+ENV.sunDir.y*0;
+  AMB.cricT-=dt;
+  if(AMB.cricT<=0){
+    AMB.cricT=1.6+Math.random()*2.6;
+    if(ig>.002&&state!=='menu'){var cp=Math.random()*2-1,cf=3900+Math.random()*500,cn=3+((Math.random()*2)|0);for(var ci=0;ci<cn;ci++)ambTone(.09,cf,cf*.97,Math.min(.05,ig*4),cp,ci*.17);}
+  }
+  AMB.dropT-=dt;
+  if(AMB.dropT<=0&&ENV.rain>.05){AMB.dropT=.04+Math.random()*.08/Math.max(.2,ENV.rain);N(.035,2500+Math.random()*4500,3,.03*ENV.rain*(ind>.5?.5:1),'bandpass',Math.random()*1.6-.8);}
   /* birds */
   var birdR=ENV.dayL*[1,.9,.45,.1][ENV.season]*(1-ENV.rain)*(1-ENV.storm)*(1-ENV.fog*.4)*(.6+.8*ENV.twil)*(1-ind*.5);
   AMB.birdT-=dt;
