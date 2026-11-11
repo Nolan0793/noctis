@@ -1888,13 +1888,13 @@ function ambUpdate(dt){
   var vTarget=on?(state==='playing'||state==='shop'?1:.5):0;
   AMB.vol+=(vTarget-AMB.vol)*k;AMB.master.gain.value=AMB.vol*.9;
   if(!on)return;
-  AMB.gustT-=dt;if(AMB.gustT<=0){AMB.gustT=2+Math.random()*5;AMB.gustTarget=Math.random();}
+  AMB.gustT-=dt;if(AMB.gustT<=0){AMB.gustT=5+Math.random()*9;AMB.gustTarget=Math.random();}
   AMB.gust+=((AMB.gustTarget||0)-AMB.gust)*Math.min(1,dt*.6);
   var ind=ENV.indoor,wind=ENV.wind,open=1-ind*.72;
-  var wg=(.05+.38*wind*(.55+.7*AMB.gust))*open;
+  var wg=(.012+.2*wind*wind*(.4+.9*AMB.gust))*open;
   AMB.windG.gain.value+=(wg-AMB.windG.gain.value)*k;
   AMB.windF.frequency.value=260+380*wind*(.6+AMB.gust*.8)-ind*110;
-  var lg=(ENV.season===3?.0:.05)*wind*(.5+AMB.gust)*(ENV.season===1||ENV.season===0||ENV.season===2?1:0)*open;
+  var lg=(ENV.season===3?.0:.02)*wind*wind*(.5+AMB.gust)*(ENV.season===1||ENV.season===0||ENV.season===2?1:0)*open;
   AMB.leafG.gain.value+=(lg-AMB.leafG.gain.value)*k;
   var rg=ENV.rain*(.13+.12*ENV.storm)*(ind>.5?.62:1);
   AMB.rainG.gain.value+=(rg-AMB.rainG.gain.value)*k;AMB.rainF.frequency.value=2800-ind*1300;
