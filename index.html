@@ -934,7 +934,7 @@ var glowTex=mkTex(64,64,function(g){
 });
 
 /* ---------- level geometry ---------- */
-var hemi=null,ROOFMATS=[],GRASS_IM=null,GRASS_IDX=[];
+var hemi=null,ROOFMATS=[],GRASS_IM=null,GRASS_IDX=[],GRASS_SH=null;
 var moon=new THREE.DirectionalLight(0xaab8d8,.55),flare=new THREE.PointLight(0xff9a50,1.3,90,1);
 var sky=new THREE.Mesh(new THREE.SphereGeometry(100,24,16),new THREE.MeshBasicMaterial({map:skyTex,side:THREE.BackSide,fog:false,depthWrite:false}));
 sky.renderOrder=-10;scene.add(sky);
@@ -1059,7 +1059,7 @@ function updateSmoke(dt){
     for(var dz=-1;dz<=1;dz++)for(var dx=-1;dx<=1;dx++)if(G[(cz+dz)*W+cx+dx])return false;
     return true;
   }
-  while(items.length<1100&&tries<9000){
+  while(items.length<2000&&tries<14000){
     tries++;var x=PR()*W*CELL,z=PR()*H*CELL;
     if(!freeAt(Math.floor(x/CELL),Math.floor(z/CELL)))continue;
     items.push([x,z]);
@@ -1072,6 +1072,10 @@ function updateSmoke(dt){
   }
   var cone=new THREE.ConeGeometry(.06,.55,4,1);cone.translate(0,.275,0);
   var gm=new THREE.MeshPhongMaterial({color:0xffffff,shininess:2,specular:0x000000,flatShading:true});
+  gm.onBeforeCompile=function(sh){
+    sh.uniforms.uWT={value:0};sh.uniforms.uWA={value:.3};GRASS_SH=sh;
+    sh.vertexShader='uniform float uWT,uWA;\n'+sh.vertexShader.replace('#include <begin_vertex>','#include <begin_vertex>\n#ifdef USE_INSTANCING\nfloat gph=instanceMatrix[3].x*.45+instanceMatrix[3].z*.62;float gsw=sin(uWT*1.9+gph)*.6+sin(uWT*4.3+gph*1.7)*.25;transformed.x+=gsw*position.y*position.y*(.25+uWA*1.4);transformed.z+=cos(uWT*1.5+gph)*position.y*position.y*(.15+uWA*.8);\n#endif');
+  };
   var im=new THREE.InstancedMesh(cone,gm,items.length*3),o=new THREE.Object3D(),col=new THREE.Color();
   var GC=[0x5b7a3a,0x6b8a44,0x4e6b33,0x8a8a4a,0x7a7a3c,0x607f3d];
   for(i=0;i<items.length;i++){
@@ -1390,8 +1394,6 @@ var skyMat=new THREE.ShaderMaterial({
     ' vec3 far=mix(uFog,uRidge,.38);vec3 near=mix(uFog,uRidge,.62);',
     ' float snowLine=smoothstep(.04,.08,up)*uSnow;',
     ' far=mix(far,vec3(.88,.92,.97)*max(uFog.r+uFog.g+uFog.b,.2)*.5+uFog*.5,snowLine*.8);',
-    ' col=mix(col,far,smoothstep(rg1+.004,rg1-.003,up)*(1.-smoothstep(-.1,0.,up)*0.));',
-    ' col=mix(col,near,smoothstep(rg2+.003,rg2-.002,up));',
     ' float hz=exp(-max(up,0.)*8.5)*uHaze;col=mix(col,uFog,clamp(hz,0.,1.));',
     ' col=mix(col,uFog,smoothstep(0.,-.12,up));',
     ' col+=uFlash*vec3(.5,.55,.8)*(.25+.75*smoothstep(0.,.5,up));',
@@ -1559,6 +1561,7 @@ function envUpdate(dt){
   envWetStep(dt);
   envWeatherFx(dt);
   treeUpdate(dt);
+  mountainUpdate();
   ambUpdate(dt);
   uiT+=dt;if(uiT>.4){uiT=0;envUiSync();}
 }
@@ -1640,7 +1643,7 @@ var ROOFSEAS=[[0x6e4631,0x436d4c],[0x6e4631,0x436d4c],[0x6e4631,0x436d4c],[0xe6e
 function envSeasonApply(){
   envFieldRedraw();envGrassRecolor();
   for(var i=0;i<2;i++){if(ROOFMATS[i])ROOFMATS[i].color.setHex(ROOFSEAS[ENV.season][i]);}
-  treeSeason();wetLast=-1;
+  treeSeason();mountainSeason();wetLast=-1;
 }
 
 /* ---- big seasonal tree where a house used to be ---- */
@@ -1967,6 +1970,83 @@ function bindEnv(){
   so.addEventListener('change',function(){settings.eSound=so.checked;save();});
   cs.addEventListener('change',function(){settings.eCloud=cs.value;save();envCloudTargets();});
   ca.addEventListener('change',function(){settings.eCAmt=ca.value;save();envCloudTargets();});
+}
+
+
+/* ---- 3D mountains: heightfield ring far beyond the map, drawn behind everything with its own aerial haze ---- */
+var MT={mesh:null,mat:null,pos:null,col:null,nrm:null,H:[],ready:false};
+function mtHash(x,z){var n=Math.sin(x*127.1+z*311.7)*43758.5453;return n-Math.floor(n);}
+function mtN(x,z){var ix=Math.floor(x),iz=Math.floor(z),fx=x-ix,fz=z-iz;fx=fx*fx*(3-2*fx);fz=fz*fz*(3-2*fz);
+  var a=mtHash(ix,iz),b=mtHash(ix+1,iz),c=mtHash(ix,iz+1),d=mtHash(ix+1,iz+1);return a+(b-a)*fx+(c-a)*fz+(a-b-c+d)*fx*fz;}
+function mtFbm(x,z,o){var s=0,a=.5,i;for(i=0;i<o;i++){s+=a*mtN(x,z);x=x*2.03+17.1;z=z*2.03+3.7;a*=.5;}return s;}
+function mtRidge(x,z,o){var s=0,a=.55,i,w=1;for(i=0;i<o;i++){var n=1-Math.abs(2*mtN(x,z)-1);n*=n;s+=a*n*w;w=Math.min(1,n*1.6);x=x*2.1+9.3;z=z*2.1+4.1;a*=.5;}return s;}
+function mtH(x,z){
+  var r=Math.hypot(x,z),amp=Math.pow(sstep(250,1700,r),1.5)*(1-.25*sstep(2400,3200,r));
+  var m=mtFbm(x*.0007+5,z*.0007+2,3),g=sstep(.32,.62,m);
+  var h=amp*(130*mtFbm(x*.0016,z*.0016,3)+g*(1150*mtRidge(x*.0011+3,z*.0011+8,5)));
+  return h+sstep(150,500,r)*(1-sstep(500,900,r))*30*mtFbm(x*.01,z*.01,3);
+}
+function mountainInit(){
+  var NR=64,NA=220,i,j,n=(NR+1)*(NA+1),pos=new Float32Array(n*3),col=new Float32Array(n*3),nrm=new Float32Array(n*3),idx=[];
+  MT.H=new Float32Array(n);
+  for(i=0;i<=NR;i++){
+    var r=250*Math.pow(3200/250,i/NR);
+    for(j=0;j<=NA;j++){
+      var a=j/NA*Math.PI*2,x=Math.cos(a)*r,z=Math.sin(a)*r,k=i*(NA+1)+j,hh=mtH(x,z);
+      pos[k*3]=x;pos[k*3+1]=hh;pos[k*3+2]=z;MT.H[k]=hh;
+      var e=Math.max(6,r*.004),dx=mtH(x+e,z)-mtH(x-e,z),dz=mtH(x,z+e)-mtH(x,z-e),nx=-dx/(2*e),nz=-dz/(2*e),nl=Math.sqrt(nx*nx+1+nz*nz);
+      nrm[k*3]=nx/nl;nrm[k*3+1]=1/nl;nrm[k*3+2]=nz/nl;
+    }
+  }
+  for(i=0;i<NR;i++)for(j=0;j<NA;j++){var a0=i*(NA+1)+j,b0=a0+1,c0=a0+NA+1,d0=c0+1;idx.push(a0,c0,b0,b0,c0,d0);}
+  var g=new THREE.BufferGeometry();
+  g.setAttribute('position',new THREE.BufferAttribute(pos,3));g.setAttribute('color',new THREE.BufferAttribute(col,3));g.setAttribute('normal',new THREE.BufferAttribute(nrm,3));g.setIndex(idx);
+  g.boundingSphere=new THREE.Sphere(new THREE.Vector3(0,0,0),1e6);
+  MT.pos=pos;MT.col=col;MT.nrm=nrm;MT.n=n;
+  MT.mat=new THREE.ShaderMaterial({
+    side:THREE.DoubleSide,depthTest:false,depthWrite:false,fog:false,
+    uniforms:{uLd:{value:new THREE.Vector3(0,1,0)},uLc:{value:new THREE.Color(1,1,1)},uAmbT:{value:new THREE.Color(.5,.6,.8)},uAmbB:{value:new THREE.Color(.3,.3,.3)},uFog:{value:new THREE.Color(.6,.7,.8)},uK:{value:.0005},uWet:{value:0}},
+    vertexShader:'attribute vec3 color;varying vec3 vC;varying vec3 vN;varying vec3 vP;void main(){vC=color;vN=normal;vP=position;vec4 p=projectionMatrix*modelViewMatrix*vec4(position,1.);gl_Position=p;gl_Position.z=p.w*.9995;}',
+    fragmentShader:['uniform vec3 uLd,uLc,uAmbT,uAmbB,uFog;uniform float uK,uWet;varying vec3 vC;varying vec3 vN;varying vec3 vP;',
+      'float hh(vec2 p){p=fract(p*vec2(123.34,456.21));p+=dot(p,p+45.32);return fract(p.x*p.y);}',
+      'float nn(vec2 p){vec2 i=floor(p),f=fract(p);f=f*f*(3.-2.*f);return mix(mix(hh(i),hh(i+vec2(1.,0.)),f.x),mix(hh(i+vec2(0.,1.)),hh(i+vec2(1.,1.)),f.x),f.y);}',
+      'void main(){vec3 n=normalize(vN);float dist=length(vP);',
+      ' float tex=.78+.44*nn(vP.xz*.012)+.25*(nn(vP.xz*.07+vP.y*.02)-.5);',
+      ' float str=.92+.1*sin(vP.y*.12+nn(vP.xz*.01)*6.);',
+      ' vec3 alb=vC*tex*str*(1.-uWet*.25);',
+      ' float nd=max(dot(n,uLd),0.);',
+      ' vec3 lit=uLc*nd*.6+mix(uAmbB,uAmbT,n.y*.5+.5)*.75;',
+      ' vec3 c=alb*lit;',
+      ' float f=1.-exp(-dist*uK);f=max(f,(1.-smoothstep(0.,170.,vP.y))*.92);f=clamp(f*.9+.05*smoothstep(0.,300.,vP.y)*0.,0.,1.);',
+      ' c=mix(c,uFog,f);',
+      ' gl_FragColor=vec4(c,1.);}'].join('\n')});
+  var m=new THREE.Mesh(g,MT.mat);m.frustumCulled=false;m.renderOrder=-9;m.userData.noShadow=true;m.userData.noWet=true;scene.add(m);MT.mesh=m;MT.ready=true;
+  mountainSeason();
+}
+function mountainSeason(){
+  if(!MT.ready)return;
+  var s=ENV.season,n=MT.n,i,col=MT.col,H=MT.H,nrm=MT.nrm,pos=MT.pos;
+  var snowLine=[820,980,800,330][s],FOR=[[.2,.36,.12],[.08,.23,.09],[.2,.2,.07],[.3,.34,.33]][s],MEA=[[.42,.56,.22],[.3,.46,.18],[.56,.46,.24],[.86,.89,.94]][s];
+  for(i=0;i<n;i++){
+    var h=H[i],sl=1-nrm[i*3+1],jx=mtHash(pos[i*3]*.37,pos[i*3+2]*.37),r=[0,0,0],k;
+    var fl=380+jx*110-sl*500,ml=fl+160;
+    var fr=FOR.slice(),me=MEA.slice();
+    if(s===2){var o=mtHash(pos[i*3]*.11,pos[i*3+2]*.11);if(o>.45){fr=[.52,.28,.08];}else if(o>.28){fr=[.6,.45,.1];}}
+    var rock=[.44+.1*jx,.42+.1*jx,.4+.08*jx];
+    if(h<fl)r=fr;else if(h<ml){var t=(h-fl)/(ml-fl);for(k=0;k<3;k++)r[k]=fr[k]+(me[k]-fr[k])*t;}else{var t2=Math.min(1,(h-ml)/160+sl*2.4);for(k=0;k<3;k++)r[k]=me[k]+(rock[k]-me[k])*t2;}
+    var sn=sstep(snowLine-60,snowLine+140,h+jx*90-sl*420);if(s===3)sn=Math.max(sn,sstep(0,.5,1-sl*1.4)*sstep(60,200,h)*.85);
+    for(k=0;k<3;k++)r[k]=r[k]+((k===2?1:.95)-r[k])*sn;
+    col[i*3]=r[0];col[i*3+1]=r[1];col[i*3+2]=r[2];
+  }
+  MT.mesh.geometry.attributes.color.needsUpdate=true;
+}
+function mountainUpdate(){
+  if(!MT.ready)return;
+  MT.mesh.position.set(camera.position.x,-camera.position.y+0,camera.position.z);
+  var u=MT.mat.uniforms,U=skyMat.uniforms;
+  u.uLd.value.copy(U.uLd.value);u.uLc.value.copy(U.uLc.value);u.uAmbT.value.copy(U.uAmbT.value).multiplyScalar(1.1);u.uAmbB.value.copy(U.uAmbB.value);
+  u.uFog.value.copy(ENV.fogCol);u.uK.value=.0003+ENV.fog*.0035+ENV.rain*.0007+ENV.snow*.0012+ENV.cloud*.00012;u.uWet.value=ENV.wet;
+  if(GRASS_SH){GRASS_SH.uniforms.uWT.value=ENV.t0;GRASS_SH.uniforms.uWA.value=ENV.wind;}
 }
 
 /* ---------- viewmodel (own scene so it never clips into walls) ---------- */
@@ -3933,7 +4013,7 @@ bindSettings();bindEnv();updateBestLine();
   c.addEventListener('change',function(){touchMode=c.checked;settings.touch=touchMode;saveJSON('hollow-settings',settings);stage.classList.toggle('touch',touchMode);resetTouch();applyGfx();applyQuality();});
 })();
 applyGfx();applyQuality();
-weatherInit();if(TREESITE)treeSetup(TREESITE.cx,TREESITE.cz);if(GX.shadow)gfxFlagShadows(scene);envStart(null);
+weatherInit();mountainInit();if(TREESITE)treeSetup(TREESITE.cx,TREESITE.cz);if(GX.shadow)gfxFlagShadows(scene);envStart(null);
 
 /* ---------- shop ---------- */
 var shopTab=0,pendingSwitch=-1;
