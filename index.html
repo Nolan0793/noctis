@@ -345,6 +345,12 @@ body{background:var(--bg);color:var(--fg);font-family:var(--display);overflow:hi
           <label for="s-eweather">날씨
             <select id="s-eweather"><option value="auto">랜덤</option><option value="clear">맑음</option><option value="cloudy">흐림</option><option value="rain">비</option><option value="storm">폭풍우</option><option value="fog">안개</option><option value="snow">눈</option></select>
           </label>
+          <label for="s-ecloud">구름 종류
+            <select id="s-ecloud"><option value="auto">자동 (계절·시간·날씨에 따라)</option><option value="none">없음</option><option value="cirrus">권운 (새털구름)</option><option value="cumulus">적운 (뭉게구름)</option><option value="stratocumulus">층적운 (두루마리구름)</option><option value="stratus">층운 (안개구름)</option><option value="nimbostratus">난층운 (비구름)</option><option value="cumulonimbus">적란운 (소나기구름)</option></select>
+          </label>
+          <label for="s-ecamt">구름 양
+            <select id="s-ecamt"><option value="few">적게</option><option value="norm">보통</option><option value="many">많이</option></select>
+          </label>
           <label for="s-emoon">달 모양
             <select id="s-emoon"><option value="auto">랜덤</option><option value="0">삭 (신월)</option><option value="0.125">초승달</option><option value="0.25">상현달</option><option value="0.375">차오르는 달</option><option value="0.5">보름달</option><option value="0.625">기우는 달</option><option value="0.75">하현달</option><option value="0.875">그믐달</option></select>
           </label>
@@ -441,7 +447,7 @@ if(!THREE){$('menu-err').hidden=false;return;}
 /* ---------- persistence ---------- */
 function loadJSON(k){try{return JSON.parse(localStorage.getItem(k))||{};}catch(e){return {};}}
 function saveJSON(k,v){try{localStorage.setItem(k,JSON.stringify(v));}catch(e){}}
-var settings=Object.assign({sens:1,fov:80,quality:'auto',gfx:'auto',eSeason:'auto',eTime:'auto',eHour:12,eWeather:'auto',eMoon:'auto',eSpeed:'norm',eSound:true},loadJSON('hollow-settings'));
+var settings=Object.assign({sens:1,fov:80,quality:'auto',gfx:'auto',eSeason:'auto',eTime:'auto',eHour:12,eWeather:'auto',eMoon:'auto',eSpeed:'norm',eSound:true,eCloud:'auto',eCAmt:'norm'},loadJSON('hollow-settings'));
 var best=Object.assign({score:0,wave:0},loadJSON('hollow-best'));
 var COARSE=!!(window.matchMedia&&matchMedia('(pointer:coarse)').matches);
 var touchMode=settings.touch===undefined?COARSE:!!settings.touch;
@@ -1234,8 +1240,8 @@ var SEASON_NAMES=['봄','여름','가을','겨울'];
 var ENV={season:1,weather:'clear',hour:20,day:0,eps:Math.PI,
   sunDir:new THREE.Vector3(0,-1,0),moonDir:new THREE.Vector3(0,-1,0),
   dayL:0,illum:1,twil:0,lightI:.55,lampI:1,
-  cloud:.1,rain:0,snow:0,fog:0,wind:.25,storm:0,wet:0,indoor:0,
-  t:{cloud:.1,rain:0,snow:0,fog:0,wind:.25,storm:0},flash:0,
+  cloud:.1,rain:0,snow:0,fog:0,wind:.25,storm:0,wet:0,indoor:0,cu:0,st:0,cb:0,ci:0,z0:1200,th:1200,
+  t:{cloud:.1,rain:0,snow:0,fog:0,wind:.25,storm:0,cu:0,st:0,cb:0,ci:0,z0:1200,th:1200},flash:0,
   fogCol:new THREE.Color(0x1b1b1c),sunScr:new THREE.Vector2(.5,.5),sunVis:0,
   exp:1,tint:new THREE.Vector3(1,1,1),sat:1.1,secPerH:40,mpSync:false,mpBase:0,t0:0,wxT:300,rainLens:0};
 var WPRE={
@@ -1275,19 +1281,58 @@ var skyMat=new THREE.ShaderMaterial({
     uSun:{value:new THREE.Vector3(0,-1,0)},uMoon:{value:new THREE.Vector3(0,-1,0)},
     uZen:{value:new THREE.Color(0x05070d)},uHor:{value:new THREE.Color(0x15171c)},uFog:{value:new THREE.Color(0x1b1b1c)},
     uCloudLit:{value:new THREE.Color(0x222630)},uCloudDark:{value:new THREE.Color(0x0d1016)},uRidge:{value:new THREE.Color(0x2a3a2a)},uSunCol:{value:new THREE.Color(1,.9,.7)},
-    uCloud:{value:.1},uStars:{value:1},uTime:{value:0},uIllum:{value:1},uDay:{value:0},uFlash:{value:0},
+    uCloud:{value:.1},uCu:{value:0},uSt:{value:0},uCb:{value:0},uCi:{value:0},uZ0:{value:1200},uTh:{value:1200},uSteps:{value:16},uLQ:{value:1},uDark:{value:0},uLd:{value:new THREE.Vector3(0,1,0)},uLc:{value:new THREE.Color(1,1,1)},uAmbT:{value:new THREE.Color(.5,.6,.8)},uAmbB:{value:new THREE.Color(.5,.5,.5)},uStars:{value:1},uTime:{value:0},uIllum:{value:1},uDay:{value:0},uFlash:{value:0},
     uSunAmt:{value:0},uMoonAmt:{value:1},uMoonR:{value:.05},uSunR:{value:.032},uWind:{value:new THREE.Vector2(0,0)},uHaze:{value:.8},uSnow:{value:0}
   },
   vertexShader:'varying vec3 vDir;void main(){vDir=position;gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.);}',
   fragmentShader:[
     'precision highp float;',
     'uniform vec3 uSun,uMoon,uZen,uHor,uFog,uCloudLit,uCloudDark,uRidge,uSunCol;',
-    'uniform float uCloud,uStars,uTime,uIllum,uDay,uFlash,uSunAmt,uMoonAmt,uMoonR,uSunR,uHaze,uSnow;',
+    'uniform float uCloud,uStars,uTime,uIllum,uDay,uFlash,uSunAmt,uMoonAmt,uMoonR,uSunR,uHaze,uSnow,uCu,uSt,uCb,uCi,uZ0,uTh,uSteps,uLQ,uDark;uniform vec3 uLd,uLc,uAmbT,uAmbB;',
     'uniform vec2 uWind;varying vec3 vDir;',
     'float h1(vec2 p){p=fract(p*vec2(123.34,456.21));p+=dot(p,p+45.32);return fract(p.x*p.y);}',
     'float n2(vec2 p){vec2 i=floor(p),f=fract(p);f=f*f*(3.-2.*f);return mix(mix(h1(i),h1(i+vec2(1.,0.)),f.x),mix(h1(i+vec2(0.,1.)),h1(i+vec2(1.,1.)),f.x),f.y);}',
     'float fbm(vec2 p){float a=.5,s=0.;for(int i=0;i<5;i++){s+=a*n2(p);p=p*2.03+vec2(17.1,3.7);a*=.5;}return s;}',
     'float fbm3(vec2 p){float a=.5,s=0.;for(int i=0;i<3;i++){s+=a*n2(p);p=p*2.03+vec2(17.1,3.7);a*=.5;}return s;}',
+    'float h31(vec3 p){p=fract(p*.1031);p+=dot(p,p.zyx+31.32);return fract((p.x+p.y)*p.z);}',
+    'float n3(vec3 x){vec3 i=floor(x),f=fract(x);f=f*f*(3.-2.*f);float a=h31(i),b=h31(i+vec3(1.,0.,0.)),c=h31(i+vec3(0.,1.,0.)),d=h31(i+vec3(1.,1.,0.)),e=h31(i+vec3(0.,0.,1.)),g=h31(i+vec3(1.,0.,1.)),h=h31(i+vec3(0.,1.,1.)),k=h31(i+vec3(1.,1.,1.));return mix(mix(mix(a,b,f.x),mix(c,d,f.x),f.y),mix(mix(e,g,f.x),mix(h,k,f.x),f.y),f.z);}',
+    'float f3(vec3 p){return n3(p)*.55+n3(p*2.07+7.1)*.3+n3(p*4.3+3.3)*.15;}',
+    'float hgp(float mu,float g){return (1.-g*g)/pow(1.+g*g-2.*g*mu,1.5)*.25;}',
+    'float densA(vec3 p,float h,bool det){',
+    ' vec3 q=p*.00042+vec3(uWind.x,uTime*.0006,uWind.y);',
+    ' float sh=f3(q);float d=0.;',
+    ' if(uCu>.01){float thC=mix(.66,.33,pow(uCu,.8));d=smoothstep(thC,thC+.2,sh+(.45-h)*.3)*smoothstep(0.,.1,h)*smoothstep(1.,.72,h);}',
+    ' if(uSt>.01){float ss=f3(q*vec3(.45,2.6,.45)+11.);float thS=mix(.75,.12,uSt);float ds=smoothstep(thS,thS+.25,ss+.1)*smoothstep(0.,.2,h)*smoothstep(1.,.6,h)*(.45+.55*uSt);d=max(d,ds);}',
+    ' if(det&&d>.01){d=clamp(d-(1.-n3(q*6.1+vec3(0.,uTime*.002,0.)))*.3*(1.-h*.3),0.,1.);}',
+    ' return d;}',
+    'float densB(vec3 p,float h,bool det){',
+    ' float mask=f3(vec3(p.xz*.00005+uWind*.35,1.3+uTime*.00004));',
+    ' float th=mix(.78,.44,uCb);float ht=.38+.62*smoothstep(th,th+.28,mask);',
+    ' float core=smoothstep(th,th+.1,mask)*smoothstep(ht,ht-.2,h)*smoothstep(0.,.05,h);',
+    ' float anv=smoothstep(th-.15,th,mask)*smoothstep(.6,.72,h)*smoothstep(.88,.78,h)*step(.7,ht);',
+    ' float d=max(core,anv*.75);',
+    ' if(det&&d>.01){d=clamp(d-(1.-f3(p*.0012+vec3(uWind.x,uTime*.001,uWind.y)))*.5*(1.-core*.5),0.,1.);}',
+    ' return d;}',
+    'vec4 march(vec3 d,float z0,float z1,int mode,float jit){',
+    ' float t0=z0/d.y,t1=min(z1/d.y,t0+38000.);float N=uSteps;float dt=(t1-t0)/N;float t=t0+dt*jit;',
+    ' float sig=mode==1?.0062:.0048;float lstep=mode==1?750.:200.;',
+    ' vec3 col=vec3(0.);float tr=1.;float mu=dot(d,uLd);float ph=mix(hgp(mu,.55),hgp(mu,-.28),.4);',
+    ' for(int i=0;i<40;i++){',
+    '  if(float(i)>=N||tr<.03)break;',
+    '  vec3 p=d*t;float h=(p.y-z0)/(z1-z0);',
+    '  float dn=mode==1?densB(p,h,true):densA(p,h,true);',
+    '  if(dn>.012){',
+    '   float ex=sig*dn*dt;float tl;',
+    '   if(uLQ>.5){float ld=0.;for(int j=1;j<4;j++){vec3 pl=p+uLd*(float(j)*lstep);float hl=(pl.y-z0)/(z1-z0);ld+=mode==1?densB(pl,hl,false):densA(pl,hl,false);}tl=exp(-ld*sig*lstep);}',
+    '   else tl=mix(.3,1.,clamp(h,0.,1.));',
+    '   float pw=1.-exp(-dn*dt*sig*2.);',
+    '   vec3 amb=mix(uAmbB,uAmbT,clamp(h,0.,1.))*(mode==1?mix(.35,1.,h):1.);',
+    '   vec3 S=uLc*tl*ph*3.2*(.4+.6*pw)+amb*(1.-uDark*.45)+uFlash*vec3(.55,.6,.95)*dn*.9;',
+    '   col+=tr*(1.-exp(-ex))*S;tr*=exp(-ex);',
+    '  }',
+    '  t+=dt;',
+    ' }',
+    ' return vec4(col,1.-tr);}',
     'void main(){',
     ' vec3 d=normalize(vDir);float up=d.y;',
     ' float sd=max(dot(d,uSun),0.);',
@@ -1325,17 +1370,19 @@ var skyMat=new THREE.ShaderMaterial({
     /* sun disk */
     ' float sdk=smoothstep(cos(uSunR),cos(uSunR*.82),dot(d,uSun));',
     ' col=mix(col,uSunCol*2.6,sdk*uSunAmt*(1.-uCloud*.6));',
-    /* clouds */
-    ' if(up>0.&&uCloud>.02){',
-    '  vec2 cp=d.xz/(up+.3)*1.25+uWind;',
-    '  float dn=fbm(cp);',
-    '  float thr=mix(.78,.3,clamp(uCloud,0.,1.));',
-    '  float cl=smoothstep(thr,thr+.2,dn)*smoothstep(0.,.1,up);',
-    '  float dn2=fbm3(cp+uSun.xz*.09/(abs(uSun.y)+.35));',
-    '  float lk=clamp((dn-dn2)*3.2+.55,0.,1.);',
-    '  vec3 cc=mix(uCloudDark,uCloudLit,lk);',
-    '  cc+=uSunCol*pow(sd,6.)*.5*(1.-cl)*uSunAmt;',
-    '  col=mix(col,cc,cl*.95);',
+    /* volumetric clouds */
+    ' if(up>.004){',
+    '  float jit=fract(52.9829189*fract(dot(gl_FragCoord.xy,vec2(.06711056,.00583715))));',
+    '  if(uCi>.02){vec2 cp=d.xz/(up+.15)+uWind*40.;float ci=fbm(vec2(cp.x*.35,cp.y*1.6)+3.)*.6+fbm3(vec2(cp.x*.9,cp.y*3.4))*.4;',
+    '   float a=smoothstep(.5-uCi*.12,.78,ci)*uCi*smoothstep(.02,.2,up)*.85;',
+    '   vec3 cc=uLc*(.2+.5*pow(max(dot(d,uLd),0.),3.))+uAmbT*.95;col=mix(col,cc,a);}',
+    '  vec4 cB=vec4(0.),cA=vec4(0.);',
+    '  if(uCb>.03)cB=march(d,1000.,9500.,1,jit);',
+    '  if(uCu+uSt>.03)cA=march(d,uZ0,uZ0+uTh,0,jit);',
+    '  vec3 rgb=cB.rgb+(1.-cB.a)*cA.rgb;float al=cB.a+(1.-cB.a)*cA.a;',
+    '  float fd=smoothstep(.0,.1,up);rgb*=fd;al*=fd;',
+    '  float hz=clamp(exp(-up*6.)*uHaze*.85,0.,1.);rgb=mix(rgb,uFog*al,hz);',
+    '  col=col*(1.-al)+rgb;',
     ' }',
     /* distant mountains */
     ' float rg1=.018+.06*fbm(vec2(az*1.7,2.3))+.02*fbm3(vec2(az*7.,5.));',
@@ -1408,6 +1455,13 @@ function envLighting(dt){
   U.uSun.value.copy(ENV.sunDir);U.uMoon.value.copy(ENV.moonDir);
   U.uSunCol.value.copy(CK.sunLow).lerp(CK.sunHigh,sstep(0,.4,sy));
   U.uSunAmt.value=sstep(-.07,.04,sy);U.uMoonAmt.value=sstep(-.06,.03,my)*(1-cl*.75)*(1-ENV.fog*.6);
+  U.uCu.value=ENV.cu;U.uSt.value=ENV.st;U.uCb.value=ENV.cb;U.uCi.value=ENV.ci;U.uZ0.value=ENV.z0;U.uTh.value=ENV.th;
+  U.uSteps.value=[8,12,18,28][Math.min(3,GX.level)];U.uLQ.value=GX.level>=1?1:0;
+  U.uDark.value=Math.min(1,ENV.st*.6+ENV.cb*.9+ENV.rain*.3);
+  var ws=sstep(-.1,.1,sy)*2.3,wm=sstep(-.05,.1,my)*(.05+.2*illum)*(1-dayL);
+  _dv.set(0,0,0).addScaledVector(ENV.sunDir,ws).addScaledVector(ENV.moonDir,wm);if(ws+wm<.001)_dv.copy(ENV.moonDir);_dv.normalize();
+  U.uLd.value.copy(_dv);U.uLc.value.copy(U.uSunCol.value).multiplyScalar(ws).add(_c3.copy(CK.moonC).multiplyScalar(wm));
+  U.uAmbT.value.copy(zen).multiplyScalar(.95).addScalar(.02+.1*dayL);U.uAmbB.value.copy(hor).multiplyScalar(.85);
   U.uCloud.value=cl;U.uStars.value=(1-dayL)*(1-Math.min(1,cl*1.1))*(1-ENV.fog)*(1-.55*illum*moonUp);
   U.uIllum.value=illum;U.uDay.value=dayL;
   U.uCloudLit.value.copy(CK.cloudLitNt).lerp(CK.cloudLitDay,dayL).lerp(CK.cloudLitTw,twil*.8).multiplyScalar(1-ENV.rain*.38-ENV.storm*.25);
@@ -1442,9 +1496,35 @@ function envRoll(rnd){
   ENV.eps=settings.eMoon==='auto'?rnd()*Math.PI*2:(+settings.eMoon*Math.PI*2);
   ENV.day=0;
 }
+function envCloudTargets(){
+  var w=ENV.weather,s=ENV.season,hr=ENV.hour,t=ENV.t;
+  var cuH=.55+.45*(.5+.5*Math.cos((hr-15)/24*Math.PI*2));
+  var cu=0,st=0,cb=0,ci=0,o=settings.eCloud||'auto';
+  if(o==='auto'){
+    if(w==='clear'){cu=[.5,.62,.3,.1][s]*cuH;ci=[.3,.25,.5,.55][s];st=[0,0,.06,.1][s];}
+    else if(w==='cloudy'){cu=[.72,.76,.5,.25][s];st=[.55,.5,.8,.92][s];ci=.3;}
+    else if(w==='rain'){st=1;cu=.15;}
+    else if(w==='storm'){cb=1;st=.7;cu=.3;}
+    else if(w==='fog'){st=.8;}
+    else if(w==='snow'){st=1;}
+  }else if(o==='none'){}else if(o==='cirrus'){ci=1;}
+  else if(o==='cumulus'){cu=.62;ci=.1;}
+  else if(o==='stratocumulus'){cu=.45;st=.55;}
+  else if(o==='stratus'){st=.9;}
+  else if(o==='nimbostratus'){st=1;}
+  else if(o==='cumulonimbus'){cb=1;cu=.25;st=.2;}
+  var am=({few:.55,norm:1,many:1.4})[settings.eCAmt||'norm']||1;
+  cu=Math.min(1,cu*am);st=Math.min(1,st*(am>1?1.1:am<1?.7:1));ci=Math.min(1,ci*am);cb=Math.min(1,cb*(am<1?.8:1));
+  t.cu=cu;t.st=st;t.cb=cb;t.ci=ci;
+  t.cloud=Math.min(1,Math.max(cu*.75,st,cb,ci*.3));
+  t.th=(900+cu*900)*[1,1.3,1,.7][s]*(cb>.3?1.2:1);
+  t.z0=1250-500*st*(1-cu)-(w==='fog'?450:0);
+}
 function envSnap(){
   var p=WPRE[ENV.weather]||WPRE.clear,k;
-  for(k in p){ENV.t[k]=p[k];ENV[k]=p[k];}
+  for(k in p){ENV.t[k]=p[k];}
+  envCloudTargets();
+  for(k in ENV.t)ENV[k]=ENV.t[k];
   ENV.wet=ENV.rain>.35?.9:(ENV.snow>.3?.2:0);
   envAstro();
 }
@@ -1456,7 +1536,7 @@ function envStart(seed){
   ENV.mpBase=ENV.hour;ENV.wxT=240+Math.random()*300;
   envUiSync();
 }
-function envSetTargets(){var p=WPRE[ENV.weather]||WPRE.clear,k;for(k in p)ENV.t[k]=p[k];}
+function envSetTargets(){var p=WPRE[ENV.weather]||WPRE.clear,k;for(k in p)ENV.t[k]=p[k];envCloudTargets();}
 function envUpdate(dt){
   ENV.t0+=dt;
   if(settings.eTime==='auto'&&ENV.secPerH>0&&(state==='playing'||state==='shop'||(state==='paused'&&MP.on))){
@@ -1468,6 +1548,7 @@ function envUpdate(dt){
   }
   ENV.wxT-=dt;
   if(ENV.wxT<=0){ENV.wxT=240+Math.random()*300;if(settings.eWeather==='auto'&&!ENV.mpSync&&state==='playing'){ENV.weather=envPickWeather(Math.random,ENV.season);envSetTargets();}}
+  envCloudTargets();
   var k=1-Math.exp(-dt*.45),p;
   for(p in ENV.t)ENV[p]+=(ENV.t[p]-ENV[p])*k;
   var wt=ENV.rain>.35?1:(ENV.snow>.3?.2:0);
@@ -1818,8 +1899,7 @@ function ambUpdate(dt){
   var rg=ENV.rain*(.13+.12*ENV.storm)*(ind>.5?.62:1);
   AMB.rainG.gain.value+=(rg-AMB.rainG.gain.value)*k;AMB.rainF.frequency.value=2800-ind*1300;
   AMB.rainLow.gain.value+=(ENV.rain*(.18+.18*ind)-AMB.rainLow.gain.value)*k;
-  var night=1-ENV.dayL,warm=[.5,1,.55,0][ENV.season],ig=night*warm*(1-ENV.rain)*(1-ENV.fog*.4)*.012*(1-ind*.6);
-  if(ENV.season===3)ig=0;
+  var night=1-ENV.dayL,warm=[.8,1,.9,.4][ENV.season],ig=night*night*warm*(1-ENV.rain*.8)*(1-ENV.fog*.4)*.012*(1-ind*.6);
   AMB.cricT-=dt;
   if(AMB.cricT<=0){
     AMB.cricT=1.6+Math.random()*2.6;
@@ -1828,7 +1908,7 @@ function ambUpdate(dt){
   AMB.dropT-=dt;
   if(AMB.dropT<=0&&ENV.rain>.05){AMB.dropT=.04+Math.random()*.08/Math.max(.2,ENV.rain);N(.035,2500+Math.random()*4500,3,.03*ENV.rain*(ind>.5?.5:1),'bandpass',Math.random()*1.6-.8);}
   /* birds */
-  var birdR=ENV.dayL*[1,.9,.45,.1][ENV.season]*(1-ENV.rain)*(1-ENV.storm)*(1-ENV.fog*.4)*(.6+.8*ENV.twil)*(1-ind*.5);
+  var birdR=ENV.dayL*[1,1,.85,.55][ENV.season]*(1-ENV.rain*.9)*(1-ENV.storm)*(1-ENV.fog*.3)*(.7+.6*ENV.twil)*(1-ind*.5);
   AMB.birdT-=dt;
   if(AMB.birdT<=0){
     AMB.birdT=(1.2+Math.random()*3.5)/Math.max(.05,birdR);
@@ -1857,8 +1937,8 @@ function bindEnv(){
   var d={eSeason:'auto',eTime:'auto',eWeather:'auto',eMoon:'auto',eSpeed:'norm',eSound:true};
   for(var k in d)if(settings[k]===undefined)settings[k]=d[k];
   function save(){saveJSON('hollow-settings',settings);}
-  var se=$('s-eseason'),we=$('s-eweather'),mo=$('s-emoon'),sp=$('s-espeed'),ti=$('s-etime'),ho=$('s-ehour'),so=$('s-esound');
-  se.value=String(settings.eSeason);we.value=settings.eWeather;mo.value=String(settings.eMoon);sp.value=settings.eSpeed;ti.value=settings.eTime;so.checked=settings.eSound!==false;
+  var cs=$('s-ecloud'),ca=$('s-ecamt'),se=$('s-eseason'),we=$('s-eweather'),mo=$('s-emoon'),sp=$('s-espeed'),ti=$('s-etime'),ho=$('s-ehour'),so=$('s-esound');
+  se.value=String(settings.eSeason);we.value=settings.eWeather;mo.value=String(settings.eMoon);sp.value=settings.eSpeed;ti.value=settings.eTime;so.checked=settings.eSound!==false;cs.value=settings.eCloud||'auto';ca.value=settings.eCAmt||'norm';
   se.addEventListener('change',function(){
     settings.eSeason=se.value;save();
     ENV.season=se.value==='auto'?Math.floor(Math.random()*4):(+se.value);
@@ -1885,6 +1965,8 @@ function bindEnv(){
     envAstro();envLighting(0);save();
   });
   so.addEventListener('change',function(){settings.eSound=so.checked;save();});
+  cs.addEventListener('change',function(){settings.eCloud=cs.value;save();envCloudTargets();});
+  ca.addEventListener('change',function(){settings.eCAmt=ca.value;save();envCloudTargets();});
 }
 
 /* ---------- viewmodel (own scene so it never clips into walls) ---------- */
