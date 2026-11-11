@@ -1666,7 +1666,7 @@ var ATT=[
   {id:'laser',name:'레이저 사이트',desc:'미조준 사격 탄퍼짐 -45%',base:230},
   {id:'supp',name:'소음기',desc:'반동 -12%, 총구 섬광 제거',base:190}
 ];
-var PM=[1,.9,1.4,1.6,1,1,1], WPRICE=[70,350,900,1200,0,0,1000], ROCKETP=250;
+var PM=[1,.9,1.4,1.6,1,1,1], WPRICE=[70,350,900,1200,0,0,1000], ROCKETP=250,AMMOP=200;
 var DEV={on:false,god:false,ammo:false,fly:false,money:false,boom:0,from:'pause',force:false}, ord=[], coins=0, own=[false,false,false,false,true,false,false], have=[{},{},{},{},{},{},{}];
 var sightSel=['red','red','red','x4',null,'red','iron'],sightOwn=[{red:1},{red:1},{red:1},{x4:1},{},{red:1},{iron:1}];
 var SOPT=[{id:'iron',name:'기본 조준기 (아이언 사이트)',price:0,desc:'부착된 조준기를 떼고 기본 조준기를 사용합니다'},{id:'red',name:'레드도트',price:100,desc:'배율 없음 · 빠르고 시야가 넓은 조준'},{id:'x2',name:'2배율 스코프',price:180,desc:'조준 시 2배 확대, 조준 중 감도 낮아짐'},{id:'x3',name:'3배율 스코프',price:260,desc:'조준 시 3배 확대, 조준 중 감도 낮아짐'},{id:'x4',name:'4배율 스코프',price:340,desc:'조준 시 4배 확대, 조준 중 감도 낮아짐'}];
@@ -3184,13 +3184,7 @@ function renderShop(){
   sec(list,BASE[i].name);
   if(!own[i])srow(list,BASE[i].name+' 구매',statLine(WEAPONS[i]),'◆ '+WPRICE[i],function(){buyWeapon(i);},coins<WPRICE[i]);
   else srow(list,'현재 성능',statLine(WEAPONS[i]),'보유중',null,true,'owned');
-  if(i===6){
-    sec(list,'보급');
-    var rfull=wm_[6]+wr_[6]>=RMAX;
-    srow(list,'RPG 로켓탄 1발','로켓 +1 (최대 '+RMAX+'발 휴대) · 현재 '+(wm_[6]+wr_[6])+'발 · 적 처치 시 1발씩 드롭',own[6]?(rfull?'가득 참':'◆ '+ROCKETP):'잠김',function(){
-      if(!own[6]||rfull||coins<ROCKETP)return;coins-=ROCKETP;wr_[6]++;sfx('pick');renderShop();
-    },!own[6]||rfull||coins<ROCKETP);
-  }else{
+  if(i!==6){
   sec(list,'조준기');
   SOPT.forEach(function(o){
     var cur_=sightSel[i]===o.id,owned=o.id==='iron'||sightOwn[i][o.id];
@@ -3204,12 +3198,12 @@ function renderShop(){
     if(have[i][a.id])srow(list,a.name,(i===5&&a.id==='mag')?'100발 드럼 탄창 (기본 33발)':a.desc,'장착됨',null,true,'owned');
     else srow(list,a.name,own[i]?((i===5&&a.id==='mag')?'100발 드럼 탄창 (기본 33발)':a.desc):'총기를 먼저 구매하세요',own[i]?'◆ '+c:'잠김',function(){buyAtt(i,a);},!own[i]||coins<c);
   });
+  }
   sec(list,'보급');
   var full=true;for(var k=0;k<6;k++)if(own[k]&&wr_[k]<WEAPONS[k].maxRes)full=false;if(own[6]&&wm_[6]+wr_[6]<RMAX)full=false;
-  srow(list,'탄약 보급','보유한 모든 총의 예비 탄약을 가득 채웁니다 (RPG 로켓 포함, 최대 7발)',full?'가득 참':'◆ 80',function(){
-    if(coins<80)return;coins-=80;for(var k=0;k<6;k++)if(own[k])wr_[k]=WEAPONS[k].maxRes;if(own[6])wr_[6]=Math.max(wr_[6],RMAX-wm_[6]);sfx('pick');renderShop();
-  },full||coins<80);
-  }
+  srow(list,'탄약 보급','보유한 모든 총의 예비 탄약을 가득 채웁니다 (RPG 로켓 포함, 최대 7발) · 로켓은 적 처치로도 획득',full?'가득 참':'◆ '+AMMOP,function(){
+    if(coins<AMMOP)return;coins-=AMMOP;for(var k=0;k<6;k++)if(own[k])wr_[k]=WEAPONS[k].maxRes;if(own[6])wr_[6]=Math.max(wr_[6],RMAX-wm_[6]);sfx('pick');renderShop();
+  },full||coins<AMMOP);
   srow(list,'의료 키트','체력 +50 (최대 100)',P.hp>=100?'체력 가득':'◆ 120',function(){
     if(coins<120||P.hp>=100)return;coins-=120;P.hp=Math.min(100,P.hp+50);sfx('pick');renderShop();
   },P.hp>=100||coins<120);
