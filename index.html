@@ -220,6 +220,7 @@ body{background:var(--bg);color:var(--fg);font-family:var(--display);overflow:hi
 <div id="stage">
   <div id="hud" hidden>
     <div id="vig"></div>
+    <div id="devbadge" hidden style="position:absolute;top:50px;left:50%;transform:translateX(-50%);font:600 10px var(--mono);letter-spacing:.12em;color:var(--good);text-shadow:0 0 6px rgba(0,0,0,.8);pointer-events:none"></div>
     <div id="dmgdir"><i></i></div>
     <div id="cross"><b></b><b></b><b></b><b></b></div>
     <div id="scope"></div>
@@ -340,6 +341,7 @@ body{background:var(--bg);color:var(--fg);font-family:var(--display);overflow:hi
         <button class="btn" id="btn-mp" type="button">방 입장</button>
         <p class="meta" id="mp-msg">같은 방 코드를 입력한 사람끼리 데스매치.</p>
       </div>
+      <div><button class="chip" id="btn-dev-m" type="button">개발자 모드</button></div>
       <p class="meta" id="m-rot" hidden>가로 모드로 돌리면 화면이 더 넓어집니다.</p>
       <p class="meta" id="m-best">PC는 키보드와 마우스, 모바일은 터치로 플레이합니다.</p>
       <p class="err" id="menu-err" hidden>WebGL 라이브러리를 불러오지 못했습니다. 네트워크를 확인하고 새로고침하세요.</p>
@@ -366,7 +368,29 @@ body{background:var(--bg);color:var(--fg);font-family:var(--display);overflow:hi
       <div style="display:flex;gap:12px;flex-wrap:wrap">
         <button class="btn" id="btn-resume" type="button">계속하기</button>
         <button class="btn" id="btn-leave" type="button" style="background:transparent;color:var(--bad);border:1px solid var(--bad)">나가기</button>
+        <button class="btn ghost" id="btn-dev-p" type="button">개발자 모드</button>
       </div>
+    </div>
+  </div>
+
+  <div class="ov" id="dev" hidden>
+    <div class="card">
+      <h2 class="title" style="font-size:clamp(34px,6vw,56px)">개발자 모드</h2>
+      <div id="dev-lock">
+        <p class="lede">6자리 코드를 입력하세요.</p>
+        <div style="display:flex;gap:12px;flex-wrap:wrap;align-items:center">
+          <input id="dev-code" type="password" inputmode="numeric" maxlength="6" autocomplete="off" spellcheck="false" placeholder="● ● ● ● ● ●" style="width:230px;background:rgba(255,255,255,.06);border:1px solid var(--line);color:var(--fg);font:700 22px var(--mono);letter-spacing:.3em;padding:14px 16px;outline:none">
+          <button class="btn" id="dev-ok" type="button">확인</button>
+        </div>
+        <p class="meta" id="dev-msg"></p>
+      </div>
+      <div id="dev-panel" hidden>
+        <p class="lede" id="dev-note">켜고 싶은 기능을 누르세요. 싱글 플레이에서만 작동합니다.</p>
+        <div class="chips" id="dev-chips"></div>
+        <div><button class="btn" id="dev-boom" type="button" style="background:transparent;color:var(--bad);border:1px solid var(--bad)">자폭</button></div>
+        <p class="meta">날아다니기: 조준 방향으로 이동 · Space 위로 · C 아래로 · Shift 빠르게</p>
+      </div>
+      <div><button class="btn ghost" id="dev-back" type="button">돌아가기</button></div>
     </div>
   </div>
 
@@ -1643,7 +1667,7 @@ var ATT=[
   {id:'supp',name:'소음기',desc:'반동 -12%, 총구 섬광 제거',base:190}
 ];
 var PM=[1,.9,1.4,1.6,1,1,1], WPRICE=[70,350,900,1200,0,0,1000], ROCKETP=250;
-var ord=[], coins=0, own=[false,false,false,false,true,false,false], have=[{},{},{},{},{},{},{}];
+var DEV={on:false,god:false,ammo:false,fly:false,money:false,boom:0,from:'pause',force:false}, ord=[], coins=0, own=[false,false,false,false,true,false,false], have=[{},{},{},{},{},{},{}];
 var sightSel=['red','red','red','x4',null,'red','iron'],sightOwn=[{red:1},{red:1},{red:1},{x4:1},{},{red:1},{iron:1}];
 var SOPT=[{id:'iron',name:'기본 조준기 (아이언 사이트)',price:0,desc:'부착된 조준기를 떼고 기본 조준기를 사용합니다'},{id:'red',name:'레드도트',price:100,desc:'배율 없음 · 빠르고 시야가 넓은 조준'},{id:'x2',name:'2배율 스코프',price:180,desc:'조준 시 2배 확대, 조준 중 감도 낮아짐'},{id:'x3',name:'3배율 스코프',price:260,desc:'조준 시 3배 확대, 조준 중 감도 낮아짐'},{id:'x4',name:'4배율 스코프',price:340,desc:'조준 시 4배 확대, 조준 중 감도 낮아짐'}];
 function rebuild(i){
@@ -2089,7 +2113,9 @@ function enemyShot(e,idx){
   tracer(ex,ey,ez,tx+jx,ty+jy-.2,tz+jz,e.type==='heavy'?0xff3a4a:0xffa04a,.07,.12);flash3(ex,ey,ez,3);smoke(ex,ey,ez,1,.4,.15,.15,.14,.7,.4);
   if(hit)hurtPlayer(def.dmg,ex,ez);
 }
+function devOn(k){return DEV[k]&&!MP.on;}
 function hurtPlayer(amount,ax,az){
+  if(devOn('god')&&!DEV.force)return;
   if(MP.on){if(!MP.alive||MP.prot>0||state==='menu')return;}
   else if(state!=='playing')return;
   P.hp-=amount;P.hurt=.45;sfx('hurt');if(touchMode&&navigator.vibrate){try{navigator.vibrate(25);}catch(e){}}
@@ -2346,6 +2372,7 @@ function startReload(){
 }
 function weaponUpdate(dt){
   var w=WEAPONS[cur];
+  if(devOn('ammo')&&!w.melee){wm_[cur]=w.mag;wr_[cur]=w.maxRes||w.reserve||999;}
   if(P.fireCd>0)P.fireCd-=dt;if(P.swapT>0)P.swapT-=dt;
   P.bloom=Math.max(0,P.bloom-dt*w.bloomDecay);
   P.idle+=dt;
@@ -2390,11 +2417,27 @@ function movePlayer(dt){
   var spd=(sprint?8.6:(P.ads>.5?3.2:5.8))*WEAPONS[cur].move,sy=Math.sin(P.yaw),cy=Math.cos(P.yaw);
   var wx=cy*ix+sy*iz,wz=-sy*ix+cy*iz,k=P.onGround?14:2.4;
   P.vx+=(wx*spd-P.vx)*Math.min(1,k*dt);P.vz+=(wz*spd-P.vz)*Math.min(1,k*dt);
+  var flying=devOn('fly');
+  if(flying){
+    var fs=(K.ShiftLeft||K.ShiftRight)?22:12,fvy=-iz*Math.sin(P.pitch)*fs+((K.Space||joy.jump)?9:0)-(K.KeyC?9:0);
+    wx=cy*ix+sy*iz;wz=-sy*ix+cy*iz;
+    var fk=Math.min(1,8*dt);P.vx+=(wx*fs-P.vx)*fk;P.vz+=(wz*fs-P.vz)*fk;P.vy+=(fvy-P.vy)*Math.min(1,10*dt);
+    P.onGround=false;
+  }
   igSt=true;
-  var nx=P.x+P.vx*dt;if(!collides(nx,P.z,P.r)&&!stairBlock(nx,P.z,P.y,P.vx>0?1:-1,0))P.x=nx;else P.vx=0;
-  var nz=P.z+P.vz*dt;if(!collides(P.x,nz,P.r)&&!stairBlock(P.x,nz,P.y,0,P.vz>0?1:-1))P.z=nz;else P.vz=0;
+  var hi=flying&&P.y>7;
+  var nx=P.x+P.vx*dt;if(hi||(!collides(nx,P.z,P.r)&&!stairBlock(nx,P.z,P.y,P.vx>0?1:-1,0)))P.x=nx;else P.vx=0;
+  var nz=P.z+P.vz*dt;if(hi||(!collides(P.x,nz,P.r)&&!stairBlock(P.x,nz,P.y,0,P.vz>0?1:-1)))P.z=nz;else P.vz=0;
   igSt=false;
+  if(hi){P.x=Math.max(.8,Math.min(W*CELL-.8,P.x));P.z=Math.max(.8,Math.min(H*CELL-.8,P.z));}
   var gy=floorAt(P.x,P.z,P.y);
+  if(flying){
+    P.y+=P.vy*dt;if(P.y>60){P.y=60;P.vy=0;}
+    if(P.y<=gy){P.y=gy;if(P.vy<0)P.vy=0;}
+    P.onGround=P.y<=gy+.02;
+    var shf=Math.hypot(P.vx,P.vz);P.sprinting=false;if(P.onGround)P.bob+=shf*dt*1.55;
+    return;
+  }
   if((K.Space||joy.jump)&&P.onGround){P.vy=6.6;P.onGround=false;}
   if(P.onGround&&gy<P.y-.5){P.onGround=false;P.vy=0;}
   if(P.onGround){P.y=gy;P.vy=0;}
@@ -2438,8 +2481,15 @@ function bsUpdate(dt){
     sfx('pick');toast('숨겨진 무기  GLOCK G18 획득!',2400);refreshSlots();switchWeapon(5);
   }
 }
+function devTick(){
+  if(devOn('money'))coins=999999;
+  if(DEV.boom&&state==='playing'&&!MP.on){
+    DEV.boom=0;DEV.force=true;
+    try{explode(P.x,P.y+.4,P.z,true);hurtPlayer(9999,P.x,P.z);}finally{DEV.force=false;}
+  }
+}
 function update(dt){
-  time+=dt;updateRockets(dt);
+  time+=dt;updateRockets(dt);devTick();
   if(MP.on){
     if(MP.alive){movePlayer(dt);bsUpdate(dt);weaponUpdate(dt);}
     if(P.hurt>0)P.hurt-=dt;
@@ -2845,7 +2895,7 @@ function lockPointer(){
 }
 function showOnly(id){
   if(id==='pause')$('pause-set').appendChild($('setbox'));else if(id==='menu')$('menu-grid').appendChild($('setbox'));
-  ['menu','pause','dead','shop'].forEach(function(k){$(k).hidden=(k!==id);});$('hud').hidden=!(state==='playing'||state==='paused'||state==='dead'||state==='shop');$('tc').hidden=!(touchMode&&state==='playing');}
+  ['menu','pause','dead','shop','dev'].forEach(function(k){$(k).hidden=(k!==id);});$('hud').hidden=!(state==='playing'||state==='paused'||state==='dead'||state==='shop');$('tc').hidden=!(touchMode&&state==='playing');}
 function startGame(){
   audioInit();
   setTimeout(function(){if(AC&&AC.state!=='running'&&state==='playing')toast('소리가 꺼져 있습니다. 화면을 한 번 터치하고 기기 미디어 볼륨도 확인하세요',3800);},900);
@@ -3019,6 +3069,43 @@ function exitToMenu(){
   showOnly('menu');updateBestLine();
 }
 $('btn-resume').addEventListener('click',resume);
+/* ---------- developer mode ---------- */
+var DEVN=[['god','무적'],['ammo','무한 탄약'],['fly','날아다니기'],['money','무한 돈']];
+function devBadge(){
+  var on=DEVN.filter(function(d){return DEV[d[0]];}).map(function(d){return d[1];});
+  var b=$('devbadge');b.textContent=on.length?'DEV · '+on.join(' · '):'';b.hidden=!on.length;
+}
+function devRender(){
+  $('dev-lock').hidden=DEV.on;$('dev-panel').hidden=!DEV.on;
+  $('dev-note').textContent=MP.on?'멀티플레이 중에는 작동하지 않습니다.':'켜고 싶은 기능을 누르세요. 싱글 플레이에서만 작동합니다.';
+  var c=$('dev-chips');c.innerHTML='';
+  DEVN.forEach(function(d){
+    var b=document.createElement('button');b.type='button';b.className='chip'+(DEV[d[0]]?' sel':'');
+    b.textContent=d[1]+' : '+(DEV[d[0]]?'켜짐':'꺼짐');
+    b.addEventListener('click',function(){DEV[d[0]]=!DEV[d[0]];if(d[0]==='fly'&&!DEV.fly){P.vy=0;}devBadge();devRender();});
+    c.appendChild(b);
+  });
+}
+function devOpen(from){
+  DEV.from=from;$('dev-msg').textContent='';$('dev-code').value='';devRender();showOnly('dev');
+  if(from==='menu'||from==='pause')$('hud').hidden=true;
+}
+function devBack(){showOnly(DEV.from);if(DEV.from==='pause')$('hud').hidden=false;}
+function devTry(){
+  if($('dev-code').value==='7575'){DEV.on=true;$('dev-msg').textContent='';devRender();}
+  else{$('dev-msg').textContent='코드가 올바르지 않습니다.';$('dev-code').value='';}
+}
+$('btn-dev-p').addEventListener('click',function(){devOpen('pause');});
+$('btn-dev-m').addEventListener('click',function(){devOpen('menu');});
+$('dev-back').addEventListener('click',devBack);
+$('dev-ok').addEventListener('click',devTry);
+$('dev-code').addEventListener('keydown',function(e){e.stopPropagation();if(e.key==='Enter')devTry();});
+$('dev-boom').addEventListener('click',function(){
+  if(MP.on){$('dev-note').textContent='멀티플레이 중에는 작동하지 않습니다.';return;}
+  if(DEV.from!=='pause'){$('dev-note').textContent='게임 중 일시정지 화면에서 사용하세요.';return;}
+  DEV.boom=1;showOnly('pause');state==='paused'&&resume();
+});
+
 $('btn-restart').addEventListener('click',startGame);
 $('pause').addEventListener('mousedown',function(e){if(e.target.id==='pause')resume();});
 
