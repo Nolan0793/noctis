@@ -240,7 +240,7 @@ body{background:var(--bg);color:var(--fg);font-family:var(--display);overflow:hi
       <div class="ammo" id="h-ammo"><span id="h-mag">30</span><em>/ <span id="h-res">150</span></em></div>
       <div class="rbar" id="h-rwrap"><i id="h-rbar"></i></div>
     </div>
-    <div id="pcw"><button type="button" id="pw0">1<small>HK416</small></button><button type="button" id="pw1">2<small>M1014</small></button><button type="button" id="pw2">3<small>PKM</small></button><button type="button" id="pw3">4<small>AWM</small></button><button type="button" id="pw4">5<small>KNIFE</small></button><button type="button" id="pw5" style="display:none">6<small>G18</small></button><em>Tab: 커서</em></div>
+    <div id="pcw"><button type="button" id="pw0" style="display:none">1<small>HK416</small></button><button type="button" id="pw1" style="display:none">2<small>M1014</small></button><button type="button" id="pw2" style="display:none">3<small>PKM</small></button><button type="button" id="pw3" style="display:none">4<small>AWM</small></button><button type="button" id="pw4">5<small>KNIFE</small></button><button type="button" id="pw5" style="display:none">6<small>G18</small></button><em>Tab: 커서</em></div>
     <div id="toast"></div>
     <div id="pop"></div>
     <div id="mpb"></div>
@@ -253,10 +253,10 @@ body{background:var(--bg);color:var(--fg);font-family:var(--display);overflow:hi
     <div id="tcpad"></div>
     <div id="joy"><i id="joyk"></i></div>
     <div class="slots" id="tb-slots">
-      <button class="tb slot cur" id="tb-w0" type="button">1<small>416</small></button>
-      <button class="tb slot" id="tb-w1" type="button">2<small>M14</small></button>
-      <button class="tb slot" id="tb-w2" type="button">3<small>MG</small></button>
-      <button class="tb slot lock" id="tb-w3" type="button">4<small>AWM</small></button>
+      <button class="tb slot cur" id="tb-w0" type="button" style="display:none">1<small>416</small></button>
+      <button class="tb slot" id="tb-w1" type="button" style="display:none">2<small>M14</small></button>
+      <button class="tb slot" id="tb-w2" type="button" style="display:none">3<small>MG</small></button>
+      <button class="tb slot lock" id="tb-w3" type="button" style="display:none">4<small>AWM</small></button>
       <button class="tb slot" id="tb-w4" type="button">5<small>KNF</small></button>
       <button class="tb slot lock" id="tb-w5" type="button" style="display:none">6<small>G18</small></button>
       <button class="tb slot" id="tb-shop" type="button" aria-label="상점">◆<small>SHOP</small></button>
@@ -2996,7 +2996,7 @@ function resetTouch(){
   joyRelease();joy.jump=false;lookPtr.id=null;adsHeld=false;firing=false;latch=false;fireN=0;
   var on=document.querySelectorAll('#tc .tb.on');for(var i=0;i<on.length;i++)on[i].classList.remove('on');
 }
-function refreshSlots(){for(var j=0;j<6;j++){var pb=$('pw'+j);if(pb){pb.classList.toggle('cur',j===cur);pb.classList.toggle('lock',!own[j]);}}var p5=$('pw5');if(p5)p5.style.display=own[5]?'':'none';for(var i=0;i<6;i++){var b=$('tb-w'+i);b.classList.toggle('cur',i===cur);b.classList.toggle('lock',!own[i]);}$('tb-w5').style.display=own[5]?'':'none';}
+function refreshSlots(){for(var j=0;j<6;j++){var pb=$('pw'+j);if(pb){pb.classList.toggle('cur',j===cur);pb.classList.toggle('lock',!own[j]);}}for(var j2=0;j2<6;j2++){var pq=$('pw'+j2);if(pq)pq.style.display=own[j2]?'':'none';}for(var i=0;i<6;i++){var b=$('tb-w'+i);b.classList.toggle('cur',i===cur);b.classList.toggle('lock',!own[i]);b.style.display=own[i]?'':'none';}}
 pad.addEventListener('pointerdown',function(e){
   if(state!=='playing')return;
   e.preventDefault();
