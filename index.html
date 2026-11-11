@@ -1642,8 +1642,8 @@ var ATT=[
   {id:'laser',name:'레이저 사이트',desc:'미조준 사격 탄퍼짐 -45%',base:230},
   {id:'supp',name:'소음기',desc:'반동 -12%, 총구 섬광 제거',base:190}
 ];
-var PM=[1,.9,1.4,1.6,1,1,1], WPRICE=[70,350,900,1200,0,0,2800], ROCKETP=300;
-var coins=0, own=[false,false,false,false,true,false,false], have=[{},{},{},{},{},{},{}];
+var PM=[1,.9,1.4,1.6,1,1,1], WPRICE=[70,350,900,1200,0,0,1000], ROCKETP=300;
+var ord=[], coins=0, own=[false,false,false,false,true,false,false], have=[{},{},{},{},{},{},{}];
 var sightSel=['red','red','red','x4',null,'red','iron'],sightOwn=[{red:1},{red:1},{red:1},{x4:1},{},{red:1},{iron:1}];
 var SOPT=[{id:'iron',name:'기본 조준기 (아이언 사이트)',price:0,desc:'부착된 조준기를 떼고 기본 조준기를 사용합니다'},{id:'red',name:'레드도트',price:100,desc:'배율 없음 · 빠르고 시야가 넓은 조준'},{id:'x2',name:'2배율 스코프',price:180,desc:'조준 시 2배 확대, 조준 중 감도 낮아짐'},{id:'x3',name:'3배율 스코프',price:260,desc:'조준 시 3배 확대, 조준 중 감도 낮아짐'},{id:'x4',name:'4배율 스코프',price:340,desc:'조준 시 4배 확대, 조준 중 감도 낮아짐'}];
 function rebuild(i){
@@ -1656,7 +1656,7 @@ function rebuild(i){
   WEAPONS[i]=o;
 }
 function resetEconomy(){
-  coins=0;own=[false,false,false,false,true,false,false];have=[{},{},{},{},{},{},{}];sightSel=['red','red','red','x4',null,'red','iron'];sightOwn=[{red:1},{red:1},{red:1},{x4:1},{},{red:1},{iron:1}];
+  ord=[];coins=0;own=[false,false,false,false,true,false,false];have=[{},{},{},{},{},{},{}];sightSel=['red','red','red','x4',null,'red','iron'];sightOwn=[{red:1},{red:1},{red:1},{x4:1},{},{red:1},{iron:1}];
   clearRockets();
   [0,1,2,3,5,6].forEach(rebuild);
   updateAttVis();
@@ -2368,7 +2368,7 @@ function weaponUpdate(dt){
     if(w.auto||!latch){fire();latch=true;}
   }
 }
-function cycleWeapon(d){for(var k=1;k<=7;k++){var n=(cur+d*k+21)%7;if(own[n]){switchWeapon(n);return;}}}
+function cycleWeapon(d){var sq=[4].concat(ord),ix=sq.indexOf(cur);if(ix<0)ix=0;var n=sq[(ix+d+sq.length*2)%sq.length];if(n!==cur&&own[n])switchWeapon(n);}
 function switchWeapon(n){
   if(n===cur||n<0||n>=WEAPONS.length)return;
   if(!own[n]){if(n!==5)toast('상점에서 구매하세요',1200);return;}
@@ -2429,7 +2429,7 @@ function wavesUpdate(dt){
 }
 function bsUpdate(dt){
   if(OUT.on&&!OUT.cage&&!own[5]&&Math.abs(P.y)<1.2&&Math.hypot(P.x-OUT.ix,P.z-OUT.iz)<1.6){
-    own[5]=true;wm_[5]=WEAPONS[5].mag;wr_[5]=WEAPONS[5].reserve;
+    own[5]=true;if(ord.indexOf(5)<0)ord.push(5);wm_[5]=WEAPONS[5].mag;wr_[5]=WEAPONS[5].reserve;
     sfx('pick');toast('숨겨진 무기  GLOCK G18 획득!',2400);refreshSlots();switchWeapon(5);
   }
 }
@@ -2958,7 +2958,7 @@ function setSlotFree(v){
   else lockPointer();
 }
 for(var pwi=0;pwi<7;pwi++)(function(i){$('pw'+i).addEventListener('click',function(){if(!slotFree)return;switchWeapon(i);setSlotFree(false);});})(pwi);
-var GAMEKEYS={Tab:1,Digit3:1,KeyW:1,KeyA:1,KeyS:1,KeyD:1,Space:1,ShiftLeft:1,ShiftRight:1,ArrowUp:1,ArrowDown:1,ArrowLeft:1,ArrowRight:1,KeyR:1,Digit1:1,Digit2:1,Digit4:1,Digit5:1,Digit6:1,Digit7:1};
+var GAMEKEYS={Tab:1,Digit3:1,KeyW:1,KeyA:1,KeyS:1,KeyD:1,Space:1,ShiftLeft:1,ShiftRight:1,ArrowUp:1,ArrowDown:1,ArrowLeft:1,ArrowRight:1,KeyR:1,Digit1:1,Digit2:1,Digit4:1,Digit5:1,Digit6:1,Digit7:1,Digit0:1};
 window.addEventListener('keydown',function(e){
   if(state==='playing'){
     if(GAMEKEYS[e.code])e.preventDefault();
@@ -2967,13 +2967,8 @@ window.addEventListener('keydown',function(e){
     if(e.code==='Tab'){if(!touchMode)setSlotFree(!slotFree);return;}
     K[e.code]=true;
     if(e.code==='KeyR')startReload();
-    if(e.code==='Digit1')switchWeapon(0);
-    if(e.code==='Digit2')switchWeapon(1);
-    if(e.code==='Digit3')switchWeapon(2);
-    if(e.code==='Digit4')switchWeapon(3);
-    if(e.code==='Digit5')switchWeapon(4);
-    if(e.code==='Digit6')switchWeapon(5);
-    if(e.code==='Digit7')switchWeapon(6);
+    if(e.code==='Digit0')switchWeapon(4);
+    var dn_=/^Digit([1-7])$/.exec(e.code);if(dn_&&ord[+dn_[1]-1]!==undefined)switchWeapon(ord[+dn_[1]-1]);
   }else if(state==='shop'&&(e.code==='Escape'||e.code==='KeyB')){closeShop();}
   else if(state==='paused'&&e.code==='Escape'){resume();}
   else if((state==='menu')&&(e.code==='Enter')){startGame();}
@@ -3068,7 +3063,7 @@ function statLine(w){
 }
 function buyWeapon(i){
   if(own[i]||coins<WPRICE[i])return;
-  coins-=WPRICE[i];own[i]=true;if(i===6){wm_[6]=1;wr_[6]=1;}pendingSwitch=i;sfx('pick');refreshSlots();renderShop();
+  coins-=WPRICE[i];own[i]=true;if(ord.indexOf(i)<0)ord.push(i);if(i===6){wm_[6]=1;wr_[6]=1;}pendingSwitch=i;sfx('pick');refreshSlots();renderShop();
 }
 function buySight(i,o){
   if(!own[i]||sightSel[i]===o.id)return;
@@ -3146,7 +3141,12 @@ function resetTouch(){
   joyRelease();joy.jump=false;lookPtr.id=null;adsHeld=false;firing=false;latch=false;fireN=0;
   var on=document.querySelectorAll('#tc .tb.on');for(var i=0;i<on.length;i++)on[i].classList.remove('on');
 }
-function refreshSlots(){for(var j=0;j<7;j++){var pb=$('pw'+j);if(pb){pb.classList.toggle('cur',j===cur);pb.classList.toggle('lock',!own[j]);}}for(var j2=0;j2<7;j2++){var pq=$('pw'+j2);if(pq)pq.style.display=own[j2]?'':'none';}for(var i=0;i<7;i++){var b=$('tb-w'+i);b.classList.toggle('cur',i===cur);b.classList.toggle('lock',!own[i]);b.style.display=own[i]?'':'none';}}
+var SN_TB=['416','M14','MG','AWM','KNF','G18','RPG'],SN_PW=['HK416','M1014','PKM','AWM','KNIFE','G18','RPG-7'];
+function slotNo(j){return j===4?0:ord.indexOf(j)+1;}
+function refreshSlots(){for(var jn=0;jn<7;jn++){var no=slotNo(jn),b1=$('tb-w'+jn),b2=$('pw'+jn);if(b1){b1.innerHTML=no+'<small>'+SN_TB[jn]+'</small>';b1.style.order=no;}if(b2){b2.innerHTML=no+'<small>'+SN_PW[jn]+'</small>';b2.style.order=no;}}
+  var tsh=$('tb-shop'),tps=$('tb-pause');if(tsh)tsh.style.order=99;if(tps)tps.style.order=99;
+  var pem=document.querySelector?document.querySelector('#pcw em'):null;if(pem)pem.style.order=99;
+  for(var j=0;j<7;j++){var pb=$('pw'+j);if(pb){pb.classList.toggle('cur',j===cur);pb.classList.toggle('lock',!own[j]);}}for(var j2=0;j2<7;j2++){var pq=$('pw'+j2);if(pq)pq.style.display=own[j2]?'':'none';}for(var i=0;i<7;i++){var b=$('tb-w'+i);b.classList.toggle('cur',i===cur);b.classList.toggle('lock',!own[i]);b.style.display=own[i]?'':'none';}}
 pad.addEventListener('pointerdown',function(e){
   if(state!=='playing')return;
   e.preventDefault();
