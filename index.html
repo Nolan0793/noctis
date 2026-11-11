@@ -3500,8 +3500,7 @@ function updateRockets(dt){
     }
     r.x+=sx;r.y+=sy;r.z+=sz;r.trav+=len;
     if(r.life<=0||r.y<-8||r.y>150||r.x<-60||r.z<-60||r.x>W*CELL+60||r.z>H*CELL+60){r.on=false;r.g.visible=false;continue;}
-    if(r.kind===1&&AC){if(!r.wh&&r.vy<-1)whisStart(r);if(r.wh)whisUpdate(r,dt);}
-    var off=1-Math.min(1,r.trav/7);
+        var off=1-Math.min(1,r.trav/7);
     r.g.position.set(r.x+r.ox*off,r.y+r.oy*off,r.z+r.oz*off);r.g.lookAt(r.g.position.x-ux,r.g.position.y-uy,r.g.position.z-uz);
     r.tk-=dt;if(r.tk<=0){r.tk=.025;smoke(r.x-ux*.4,r.y-uy*.4,r.z-uz*.4,1,.25,.55,.52,.5,1.1,.3);emit(r.x-ux*.3,r.y-uy*.3,r.z-uz*.3,1,1.4,1,.65,.2,.25,0);}
   }
