@@ -5396,7 +5396,7 @@ function visual(dt,alpha){
     if(anyW){renderer.clearDepth();renderer.render(wScene,wCam);}
   }
 }
-function zoomFov(f,ad,Z){var fz=Z>1?2*Math.atan(Math.tan(f*Math.PI/360)/Z)*180/Math.PI:f*.78;return f+(fz-f)*ad;}
+function zoomFov(f,ad,Z){var fz=Z>1?2*Math.atan(Math.tan(f*Math.PI/360)/Z)*180/Math.PI:f;return f+(fz-f)*ad;}
 function frame(now){
   requestAnimationFrame(frame);
   var dt=(now-last)/1000;last=now;if(!(dt>0))return;if(dt>.1)dt=.1;
