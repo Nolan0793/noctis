@@ -31,6 +31,8 @@ body{background:var(--bg);color:var(--fg);font-family:var(--display);overflow:hi
 #scope::before,#scope::after{content:'';position:absolute;background:rgba(0,0,0,.92)}
 #scope::before{left:50%;top:50%;width:94vmin;height:1px;margin-left:-47vmin}
 #scope::after{left:50%;top:50%;height:94vmin;width:1px;margin-top:-47vmin}
+#pickbtn{position:absolute;left:50%;bottom:108px;transform:translateX(-50%);z-index:6;pointer-events:auto;background:rgba(10,14,20,.82);border:1px solid rgba(120,220,255,.7);color:#fff;font:600 13px var(--mono);letter-spacing:.04em;padding:9px 16px;border-radius:9px;box-shadow:0 0 14px rgba(94,233,255,.35);cursor:pointer}
+#pickbtn[hidden]{display:none}
 #hitm{position:absolute;left:50%;top:50%;width:0;height:0;opacity:0;transition:opacity .14s}
 #hitm.on{opacity:1;transition:none}
 #hitm b{position:absolute;width:2px;height:9px;background:#fff;left:-1px;top:-1px;transform-origin:1px 1px}
@@ -262,6 +264,7 @@ body{background:var(--bg);color:var(--fg);font-family:var(--display);overflow:hi
     <div id="dmgdir"><i></i></div>
     <div id="cross"><b></b><b></b><b></b><b></b></div>
     <div id="scope"></div>
+    <button type="button" id="pickbtn" hidden></button>
     <div id="hitm"><b></b><b></b><b></b><b></b></div>
     <div class="tl">
       <div class="wave"><small>Wave</small><span id="h-wave">01</span></div>
@@ -2920,7 +2923,7 @@ function rebuild(i){
 }
 function resetEconomy(){
   ord=[];coins=0;own=[false,false,false,false,true,false,false,false,false];have=[{},{},{},{},{},{},{},{}];sightSel=['red','red','red','x4',null,'red','iron','iron'];sightOwn=[{red:1},{red:1},{red:1},{x4:1},{},{red:1},{iron:1},{iron:1}];
-  clearRockets();grClear();
+  clearRockets();grClear();dropsClear();
   [0,1,2,3,5,6,7].forEach(rebuild);if(typeof MSL!=="undefined"&&MSL)MSL.n=0;
   updateAttVis();
 }
@@ -3773,7 +3776,7 @@ function devTick(){
   }
 }
 function update(dt){
-  time+=dt;updateRockets(dt);grUpdate(dt);mslUpdate(dt);mortUpdate(dt);devTick();pondStep(dt);
+  time+=dt;dropUpdate(dt);updateRockets(dt);grUpdate(dt);mslUpdate(dt);mortUpdate(dt);devTick();pondStep(dt);
   if(MP.on){
     if(MP.alive){movePlayer(dt);solidY=-1e9;bsUpdate(dt);weaponUpdate(dt);}
     if(P.hurt>0)P.hurt-=dt;
@@ -4133,7 +4136,7 @@ function mpStart(){
   mpGetRoom(code).then(function(res){
     var rm=res.rm;
     MP.rm=rm;MP.net=res.kind;MP.role=rm.role||'';MP.name=nm;MP.code=code;MP.k=0;MP.d=0;MP.alive=true;MP.hq={};MP.feed=[];MP.killAt={};MP.myPeer='';
-    MP.unsubs=[rm.on('msl',mpOnMsl),rm.on('shot',mpOnShot),rm.on('hit',mpOnHit),rm.on('died',mpOnDied),rm.onPeers(mpOnPeers),
+    MP.unsubs=[rm.on('msl',mpOnMsl),rm.on('shot',mpOnShot),rm.on('drop',mpOnDrop),rm.on('take',mpOnTake),rm.on('hit',mpOnHit),rm.on('died',mpOnDied),rm.onPeers(mpOnPeers),
       rm.onConnection(function(c){
         MP.connected=c;if(state!=='menu')toast(c?'서버 재연결됨':'서버 연결 끊김…',1800);
       })];
@@ -4153,7 +4156,7 @@ function mpLeave(){
   for(var i=0;i<MP.unsubs.length;i++){try{MP.unsubs[i]();}catch(e){}}
   MP.unsubs=[];
   try{var pr=MP.rm.leave();if(pr&&pr.catch)pr.catch(function(){});}catch(e){}
-  MP.rm=null;
+  MP.rm=null;dropsClear();
   for(var id in remotes)mpDropRemote(id);
   $('hud').classList.remove('mp');$('mpdead').hidden=true;$('mpfeed').textContent='';
   state='menu';K={};firing=false;adsHeld=false;showOnly('menu');
@@ -4859,6 +4862,7 @@ window.addEventListener('keydown',function(e){
     if(e.code==='KeyB'){openShop();return;}
     if(e.code==='KeyG'){openTgt();return;}
     if(e.code==='KeyE'){mortToggle();return;}
+    if(e.code==='KeyF'){pickDrop();return;}
     if(e.code==='Tab'){if(!touchMode)setSlotFree(!slotFree);return;}
     K[e.code]=true;
     if(e.code==='KeyR')startReload();
@@ -4968,6 +4972,60 @@ bindSettings();bindEnv();updateBestLine();
 applyGfx();applyQuality();
 weatherInit();mountainInit();forestInit();if(TREESITE){treeSetup(TREESITE.cx,TREESITE.cz);pondInit();fishInit();}if(GX.shadow)gfxFlagShadows(scene);envStart(null);
 
+/* ---------- dropped weapons ---------- */
+var DROPS=[],dropSeq=0,dropNear=null,dropBtnTxt='';
+var DLEN=[.9,1,1.1,1.2,.3,.3,1.1,.9,.2],mDropBeam=new THREE.MeshBasicMaterial({color:0x5ee9ff,transparent:true,opacity:.22,depthWrite:false,blending:THREE.AdditiveBlending}),mDropRing=new THREE.MeshBasicMaterial({color:0x5ee9ff,transparent:true,opacity:.7,side:THREE.DoubleSide,depthWrite:false});
+function dropMake(id,w,x,y,z,wm,wr){
+  var g=new THREE.Group(),L=DLEN[w]||.8;
+  part(g,mBlk,L,.07,.1,0,.1,0);part(g,mBlk2,.12,.14,.07,-L*.1,.02,0);part(g,mAlu,L*.35,.04,.06,L*.4,.13,0);part(g,mSteel,L*.3,.025,.025,-L*.55,.1,0);
+  var ring=new THREE.Mesh(new THREE.RingGeometry(.55,.68,32),mDropRing);ring.rotation.x=-Math.PI/2;ring.position.y=.02;g.add(ring);
+  var beam=new THREE.Mesh(new THREE.CylinderGeometry(.09,.09,2.6,10,1,true),mDropBeam);beam.position.y=1.3;g.add(beam);
+  g.position.set(x,y,z);g.userData.noShadow=true;scene.add(g);
+  var d={id:id,w:w,x:x,y:y,z:z,wm:wm,wr:wr,g:g,t:Math.random()*6};DROPS.push(d);return d;
+}
+function dropRemove(id){for(var i=0;i<DROPS.length;i++)if(DROPS[i].id===id){scene.remove(DROPS[i].g);DROPS.splice(i,1);return true;}return false;}
+function dropsClear(){if(!DROPS)return;while(DROPS.length){scene.remove(DROPS[0].g);DROPS.shift();}dropNear=null;var b=$('pickbtn');if(b)b.hidden=true;dropBtnTxt='';}
+function dropSpawn(w,x,z,wm,wr){
+  var y=Math.max(groundY(x,z),P.y)+.05,id=(MP.on&&MP.myPeer?MP.myPeer:'s')+'-'+(++dropSeq)+'-'+((Math.random()*1e6)|0);
+  dropMake(id,w,x,y,z,wm,wr);
+  if(MP.on)mpSend('drop',{id:id,w:w,x:+x.toFixed(2),y:+y.toFixed(2),z:+z.toFixed(2),m:wm,r:wr});
+}
+function mpOnDrop(m){
+  if(m.isMe||!MP.on)return;var d=m.data;if(!d||typeof d.id!=='string'||d.id.length>60)return;
+  var w=mpNum(d.w,0,7,-1)|0;if(w<0||w===4||!WEAPONS[w])return;
+  for(var i=0;i<DROPS.length;i++)if(DROPS[i].id===d.id)return;
+  if(DROPS.length>40)dropRemove(DROPS[0].id);
+  dropMake(d.id,w,mpNum(d.x,-50,200,0),mpNum(d.y,-5,30,0),mpNum(d.z,-50,200,0),mpNum(d.m,0,500,0)|0,mpNum(d.r,0,999,0)|0);
+}
+function mpOnTake(m){if(m.isMe||!MP.on)return;var d=m.data;if(d&&typeof d.id==='string')dropRemove(d.id);}
+function dropUpdate(dt){
+  var best=null,bd=2.3,i,d;
+  for(i=0;i<DROPS.length;i++){d=DROPS[i];d.t+=dt;d.g.rotation.y+=dt*.9;d.g.children[0].position.y=.1+Math.sin(d.t*2)*.03;
+    var dd=Math.hypot(d.x-P.x,d.z-P.z);if(dd<bd&&Math.abs(d.y-P.y)<2.2){bd=dd;best=d;}}
+  var can=best&&state==='playing'&&(!MP.on||MP.alive)&&!GRS.cook;
+  dropNear=can?best:null;
+  var b=$('pickbtn'),txt='';
+  if(dropNear){var w=dropNear.w,full=!own[w]&&ord.length>=carryMax();txt=(touchMode?'':'[F] ')+BASE[w].name+(own[w]?' 탄약 줍기':(full?' 줍기 (현재 총과 교체)':' 줍기'));}
+  if(txt!==dropBtnTxt){dropBtnTxt=txt;b.textContent=txt;b.hidden=!txt;}
+}
+function pickDrop(){
+  var d=dropNear;if(!d||state!=='playing')return;var w=d.w;
+  if(own[w]){
+    wr_[w]=Math.min(w===6?Math.max(0,RMAX-wm_[6]):WEAPONS[w].maxRes,wr_[w]+d.wm+d.wr);
+    dropRemove(d.id);if(MP.on)mpSend('take',{id:d.id});sfx('pick');dropNear=null;return;
+  }
+  if(ord.length>=carryMax()){
+    var out=(cur!==4&&cur!==8&&ord.indexOf(cur)>=0)?cur:ord[ord.length-1];
+    dropSpawn(out,d.x+(Math.random()-.5)*.8,d.z+(Math.random()-.5)*.8,wm_[out],wr_[out]);
+    own[out]=false;var xi=ord.indexOf(out);if(xi>=0)ord.splice(xi,1);
+    if(out===6||out===7){wm_[out]=0;wr_[out]=0;}
+  }
+  own[w]=true;if(ord.indexOf(w)<0)ord.push(w);wm_[w]=d.wm;wr_[w]=d.wr;
+  dropRemove(d.id);if(MP.on)mpSend('take',{id:d.id});dropNear=null;
+  P.reloading=false;cur=-1;switchWeapon(w);refreshSlots();
+}
+(function(){var b=$('pickbtn');b.addEventListener('pointerdown',function(e){e.preventDefault();e.stopPropagation();pickDrop();});})();
+
 /* ---------- shop ---------- */
 var shopTab=0,pendingSwitch=-1;
 function priceOf(i,a){return Math.round(a.base*PM[i]/10)*10;}
@@ -5003,8 +5061,9 @@ function buyWeapon(i){
 }
 function dropWeapon(i){
   if(!own[i]||i===4)return;
+  dropSpawn(i,P.x-Math.sin(P.yaw)*1.1,P.z-Math.cos(P.yaw)*1.1,wm_[i],wr_[i]);
   own[i]=false;var x=ord.indexOf(i);if(x>=0)ord.splice(x,1);
-  if(i===6)wm_[6]=wr_[6]=0;if(i===7){wm_[7]=0;wr_[7]=0;}if(i===8&&!GRS.cook){wm_[8]=0;wr_[8]=0;}
+  if(i===6||i===7){wm_[i]=0;wr_[i]=0;}
   if(cur===i)pendingSwitch=4;if(i===5)shopTab=0;
   sfx('pick');refreshSlots();renderShop();
 }
