@@ -2665,6 +2665,11 @@ function knifeStart(type){
   if(type<2)knS.alt=1-type;
   sfx('swish');
 }
+function knHead(cx,cy,cz,r){
+  var o=camera.position,d=dirv.set(0,0,-1).applyQuaternion(camera.quaternion),lx=o.x-cx,ly=o.y-cy,lz=o.z-cz,
+    b=lx*d.x+ly*d.y+lz*d.z,c=lx*lx+ly*ly+lz*lz-r*r,disc=b*b-c;
+  if(disc<0)return false;var t=-b-Math.sqrt(disc);return t<4.5&&(t>0||c<0);
+}
 function knifeHit(){
   var heavy=knS.type===2,dmg=heavy?150:60,rng=heavy?3.0:2.7,fx=-Math.sin(P.yaw),fz=-Math.cos(P.yaw),best=null,bd=1e9;
   for(var i=0;i<enemies.length;i++){
@@ -2685,10 +2690,10 @@ function knifeHit(){
       if(Math.abs(rp.cy-P.y)>1.8||!hasLOS(P.x,P.z,rp.cx,rp.cz))continue;
       if(rd<brd){brd=rd;br=rp;}
     }
-    if(br){sfx('knifehit');emit(br.cx,br.cy+1.1,br.cz,8,3.5,1,.45,.2,.45,9);mpHit(br,dmg,false,4);}
+    if(br){var bh=knHead(br.cx,br.cy+1.7,br.cz,.4);sfx('knifehit');emit(br.cx,br.cy+(bh?1.7:1.1),br.cz,8,3.5,1,.45,.2,.45,9);mpHit(br,bh?dmg*2.5:dmg,bh,4);}
     return;
   }
-  if(best){sfx('knifehit');emit(best.x,best.gy+1.1*best.s,best.z,8,3.5,1,.45,.2,.45,9);hitm(false);damageEnemy(best,dmg,false);}
+  if(best){var eh=knHead(best.x,best.gy+1.7*best.s*best.h,best.z,.4*best.s);sfx('knifehit');emit(best.x,best.gy+(eh?1.7:1.1)*best.s,best.z,8,3.5,1,.45,.2,.45,9);hitm(eh);damageEnemy(best,eh?dmg*2.5:dmg,eh);}
 }
 
 /* ===== RPG-7: olive steel tube, wooden heat shield, flared rear venturi, PGO-7 side optic, loaded PG-7V warhead ===== */
