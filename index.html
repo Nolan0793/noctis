@@ -2872,6 +2872,8 @@ function glockAnim(t){
   return RA;
 }
 var VM_POS=new THREE.Vector3(.2,-.2,-.42);
+/* reload pose per weapon: [x,y,pitch,yaw,roll] blended in while reloading so the mag well faces the player */
+var RLP={0:[-.2,.26,.5,.55,-.55],2:[-.16,.2,.4,.5,-.4],3:[-.16,.2,.4,.45,-.4],5:[-.1,.14,.4,.4,-.3]};
 
 /* ---------- shared weapon data ---------- */
 var BASE=[
@@ -5265,13 +5267,11 @@ function visual(dt,alpha){
     var wv=WEAPONS[cur],spr=P.sprinting?1:0,ad=P.ads;
     var ax=VM_POS.x*(1-ad)+Math.cos(P.bob)*.012*bobSm*(1-ad)-P.sway[0]*.6*(1-ad*.8);
     var ay=VM_POS.y+(-wv.dotY-VM_POS.y)*ad-by*.35*(1-ad)-dip-P.sway[1]*.5*(1-ad*.8)-spr*.05;
-    if(P.reloading&&(cur===0||cur===2||cur===3||cur===5)){
-      /* lift the gun up and toward the middle while reloading so the magazine well stays in view */
-      var lk=ss(0,.16,rpn)-ss(.84,1,rpn),LK=[.11,0,.08,.07,0,.06][cur]||0,LX=[.15,0,.11,.1,0,.08][cur]||0;
-      ay+=lk*LK;ax-=lk*LX;
-    }
+    var rlq=P.reloading?RLP[cur]:null,rlk=rlq?ss(0,.16,rpn)-ss(.84,1,rpn):0;
+    if(rlq){ax+=rlq[0]*rlk;ay+=rlq[1]*rlk;}
     vm.position.set(ax,ay,VM_POS.z+vmKick*.045*wv.vmk2);
     vm.rotation.set(vmKick*.07*wv.vmk2*(1-ad*.6)+tilt*.6+spr*.18,spr*-.35+ry,P.sway[0]*.4*(1-ad)+tilt*rollK+rz);
+    if(rlq)vm.rotation.set(vm.rotation.x+rlq[2]*rlk,vm.rotation.y+rlq[3]*rlk,vm.rotation.z+rlq[4]*rlk);
     rpgRound.visible=wm_[6]>0||(cur===6&&P.reloading&&rpn>.5);
     if(cur===8)grVM(dt,rpn);
     if(cur===1)pumpT=Math.max(0,pumpT-dt);
