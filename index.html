@@ -3676,7 +3676,7 @@ function weaponUpdate(dt){
     if(w.auto||!latch){fire();latch=true;}
   }
 }
-function cycleWeapon(d){var sq=[4].concat(ord),ix=sq.indexOf(cur);if(ix<0)ix=0;var n=sq[(ix+d+sq.length*2)%sq.length];if(n!==cur&&own[n])switchWeapon(n);}
+function cycleWeapon(d){var sq=[4].concat(ord,own[8]?[8]:[]),ix=sq.indexOf(cur);if(ix<0)ix=0;var n=sq[(ix+d+sq.length*2)%sq.length];if(n!==cur&&own[n])switchWeapon(n);}
 function switchWeapon(n){
   if(n===cur||n<0||n>=WEAPONS.length||GRS.cook)return;
   if(!own[n]){if(n!==5)toast('상점에서 구매하세요',1200);return;}
@@ -4851,7 +4851,7 @@ function setSlotFree(v){
   else lockPointer();
 }
 for(var pwi=0;pwi<9;pwi++)(function(i){$('pw'+i).addEventListener('click',function(){if(!slotFree)return;switchWeapon(i);setSlotFree(false);});})(pwi);
-var GAMEKEYS={Tab:1,Digit3:1,KeyW:1,KeyA:1,KeyS:1,KeyD:1,Space:1,ShiftLeft:1,ShiftRight:1,ArrowUp:1,ArrowDown:1,ArrowLeft:1,ArrowRight:1,KeyR:1,Digit1:1,Digit2:1,Digit4:1,Digit5:1,Digit6:1,Digit7:1,Digit8:1,Digit0:1};
+var GAMEKEYS={Tab:1,Digit3:1,KeyW:1,KeyA:1,KeyS:1,KeyD:1,Space:1,ShiftLeft:1,ShiftRight:1,ArrowUp:1,ArrowDown:1,ArrowLeft:1,ArrowRight:1,KeyR:1,Digit1:1,Digit2:1,Digit4:1,Digit5:1,Digit6:1,Digit7:1,Digit8:1,Digit9:1,Digit0:1};
 window.addEventListener('keydown',function(e){
   if(state==='playing'){
     if(GAMEKEYS[e.code])e.preventDefault();
@@ -4864,6 +4864,7 @@ window.addEventListener('keydown',function(e){
     if(e.code==='KeyR')startReload();
     if(e.code==='Digit0')switchWeapon(4);
     var dn_=/^Digit([1-8])$/.exec(e.code);if(dn_&&ord[+dn_[1]-1]!==undefined)switchWeapon(ord[+dn_[1]-1]);
+    if(e.code==='Digit9'&&own[8])switchWeapon(8);
   }else if(state==='shop'&&(e.code==='Escape'||e.code==='KeyB'||e.code==='KeyG')){if(tgtOpen)closeTgt();else closeShop();}
   else if(state==='paused'&&e.code==='Escape'){resume();}
   else if((state==='menu')&&(e.code==='Enter')){startGame();}
@@ -4997,8 +4998,8 @@ function statLine(w){
   return '피해 '+Math.round(w.dmg)+(w.pellets>1?'×'+w.pellets:'')+' · 분당 '+Math.round(60/w.rate)+'발 · 탄창 '+w.mag+' · 장전 '+w.reload.toFixed(1)+'초 · 이동 '+Math.round(w.move*100)+'%';
 }
 function buyWeapon(i){
-  if(own[i]||coins<WPRICE[i]||ord.length>=carryMax())return;
-  coins-=WPRICE[i];own[i]=true;if(ord.indexOf(i)<0)ord.push(i);if(i===6){wm_[6]=1;wr_[6]=1;}if(i===7){wm_[7]=1;wr_[7]=5;}if(i===8){wm_[8]=1;wr_[8]=1;}pendingSwitch=i;sfx('pick');refreshSlots();renderShop();
+  if(own[i]||coins<WPRICE[i]||(i!==8&&ord.length>=carryMax()))return;
+  coins-=WPRICE[i];own[i]=true;if(i!==8&&ord.indexOf(i)<0)ord.push(i);if(i===6){wm_[6]=1;wr_[6]=1;}if(i===7){wm_[7]=1;wr_[7]=5;}if(i===8){wm_[8]=1;wr_[8]=1;}pendingSwitch=i;sfx('pick');refreshSlots();renderShop();
 }
 function dropWeapon(i){
   if(!own[i]||i===4)return;
@@ -5031,9 +5032,9 @@ function renderShop(){
   });
   var list=$('s-list'),i=shopTab;list.innerHTML='';
   sec(list,BASE[i].name);
-  var cm=carryMax(),cfull=ord.length>=cm,cnt=ord.length+(cm>=99?'':'/'+cm);
-  if(!own[i])srow(list,BASE[i].name+' 구매',cfull?'휴대 가득 ('+cnt+') · 다른 무기를 버리면 구매할 수 있습니다':statLine(WEAPONS[i])+' · 휴대 '+cnt,cfull?'휴대 가득':'◆ '+WPRICE[i],function(){buyWeapon(i);},cfull||coins<WPRICE[i]);
-  else{srow(list,'현재 성능',statLine(WEAPONS[i])+' · 휴대 '+cnt,'보유중',null,true,'owned');srow(list,'무기 버리기','이 무기를 내려놓습니다 (환불 없음)','버리기',function(){dropWeapon(i);},false);}
+  var cm=carryMax(),cfull=i!==8&&ord.length>=cm,cnt=ord.length+(cm>=99?'':'/'+cm);
+  if(!own[i])srow(list,BASE[i].name+' 구매',cfull?'휴대 가득 ('+cnt+') · 다른 무기를 버리면 구매할 수 있습니다':statLine(WEAPONS[i])+(i===8?' · 별도 슬롯 (휴대 제한 제외)':' · 휴대 '+cnt),cfull?'휴대 가득':'◆ '+WPRICE[i],function(){buyWeapon(i);},cfull||coins<WPRICE[i]);
+  else{srow(list,'현재 성능',statLine(WEAPONS[i])+(i===8?'':' · 휴대 '+cnt),'보유중',null,true,'owned');if(i!==8)srow(list,'무기 버리기','이 무기를 내려놓습니다 (환불 없음)','버리기',function(){dropWeapon(i);},false);}
   if(i===8&&own[8]){var gt=wm_[8]+wr_[8];srow(list,'수류탄 보충','1개 추가 · 보유 '+gt+'/'+GRN.max,gt>=GRN.max?'최대 보유':'◆ '+WPRICE[8],function(){if(coins<WPRICE[8]||wm_[8]+wr_[8]>=GRN.max)return;coins-=WPRICE[8];if(wm_[8]<1&&!GRS.cook)wm_[8]=1;else wr_[8]++;sfx('pick');renderShop();},gt>=GRN.max||coins<WPRICE[8]);}
   if(i<6){
   sec(list,'조준기');
@@ -5083,8 +5084,8 @@ function resetTouch(){
   var on=document.querySelectorAll('#tc .tb.on');for(var i=0;i<on.length;i++)on[i].classList.remove('on');
 }
 var SN_TB=['HK416','M1014','PKM','AWM','KNIFE','G18','RPG-7','MORTAR','GRENADE'],SN_PW=SN_TB;
-function slotNo(j){return j===4?0:ord.indexOf(j)+1;}
-function refreshSlots(){for(var jn=0;jn<9;jn++){var no=slotNo(jn),b1=$('tb-w'+jn),b2=$('pw'+jn);if(b1){b1.innerHTML=no+'<small>'+SN_TB[jn]+'</small>';b1.style.order=no;}if(b2){b2.innerHTML=no+'<small>'+SN_PW[jn]+'</small>';b2.style.order=no;}}
+function slotNo(j){return j===4?0:(j===8?9:ord.indexOf(j)+1);}
+function refreshSlots(){for(var jn=0;jn<9;jn++){var no=slotNo(jn),b1=$('tb-w'+jn),b2=$('pw'+jn);if(b1){b1.innerHTML=no+'<small>'+SN_TB[jn]+'</small>';b1.style.order=(jn===8?90:no);}if(b2){b2.innerHTML=no+'<small>'+SN_PW[jn]+'</small>';b2.style.order=(jn===8?90:no);}}
   var tdp=$('tb-dep');if(tdp){tdp.style.order=97;tdp.style.display=cur===7?'':'none';}
   var tml=$('tb-msl');if(tml){tml.style.order=98;tml.style.display=(typeof MSL!=='undefined'&&MSL.n>0)?'':'none';}
   var tsh=$('tb-shop'),tps=$('tb-pause');if(tsh)tsh.style.order=99;if(tps)tps.style.order=99;
