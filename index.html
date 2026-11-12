@@ -4346,8 +4346,13 @@ function mortPreview(dt){
 var GRN={g:18,v:18,f:3,max:3},GRP={R:6,dmg:280,pvp:.8,selfR:6,selfK:.9,w:8,big:.55,sm:1},GRE={R:6,dmg:85},GRS={cook:false,t:0};
 var gpool=[],_gs={x:0,y:0,z:0,vx:0,vy:0,vz:0},_gv=new THREE.Vector3(),gpShown=false,gpT=0,GPV=new Float32Array(3*120);
 (function(){
-  var geo=new THREE.SphereGeometry(.06,10,8);
-  for(var i=0;i<16;i++){var m=new THREE.Mesh(geo,mOlive);m.scale.set(1,1.15,1);m.visible=false;m.userData.noShadow=true;scene.add(m);gpool.push({m:m,on:false,x:0,y:0,z:0,vx:0,vy:0,vz:0,f:0,own:0,sp:0});}
+  var geo=new THREE.SphereGeometry(.09,12,9),hgeo=new THREE.SphereGeometry(.34,12,9);
+  for(var i=0;i<16;i++){
+    var mat=new THREE.MeshBasicMaterial({color:0xff1a1a,fog:false}),m=new THREE.Mesh(geo,mat);
+    var hm=new THREE.MeshBasicMaterial({color:0xff2a1a,transparent:true,opacity:.32,depthWrite:false,fog:false,blending:THREE.AdditiveBlending}),h=new THREE.Mesh(hgeo,hm);
+    m.add(h);m.visible=false;m.userData.noShadow=true;scene.add(m);
+    gpool.push({m:m,mat:mat,hm:hm,h:h,on:false,x:0,y:0,z:0,vx:0,vy:0,vz:0,f:0,own:0,sp:0});
+  }
 })();
 function ecol(e){return e.type==='heavy'?'#ff3a4a':(e.type==='rusher'?'#ff3fa4':(e.type==='sniper'?'#7dff6a':(e.type==='grenadier'?'#ffd43a':'#ff8a3d')));}
 function grMove(s,dt){
@@ -4388,6 +4393,7 @@ function grUpdate(dt){
     if(grMove(g,dt))sfxAt('click',g.x,g.z);
     g.f-=dt;g.sp+=dt*9;
     g.m.position.set(g.x,g.y,g.z);g.m.rotation.set(g.sp,g.sp*.7,0);
+    var pl=Math.sin(time*(g.f<.7?34:14))>0;g.mat.color.setHex(pl?0xff2020:0xffb0a0);g.hm.opacity=pl?.38:.18;g.h.scale.setScalar(pl?1.15:.85);
     if(g.f<=0){grBoom(g);continue;}
     if(g.y<-8||g.x<-60||g.z<-60||g.x>W*CELL+60||g.z>H*CELL+60){g.on=false;g.m.visible=false;}
   }
