@@ -2906,7 +2906,7 @@ var ATT=[
   {id:'supp',name:'소음기',desc:'반동 -12%, 총구 섬광 제거',base:190}
 ];
 var PM=[1,.9,1.4,1.6,1,1,1,1], WPRICE=[70,350,900,1200,0,0,1000,800,50], ROCKETP=250,AMMOP=200;
-var DEV={on:false,god:false,ammo:false,fly:false,money:false,boom:0,from:'pause',force:false}, ord=[], coins=0, own=[false,false,false,false,true,false,false,false,false], have=[{},{},{},{},{},{},{},{}];
+var DEV={on:false,god:false,ammo:false,fly:false,money:false,unl:false,boom:0,from:'pause',force:false}, ord=[], coins=0, own=[false,false,false,false,true,false,false,false,false], have=[{},{},{},{},{},{},{},{}];
 var sightSel=['red','red','red','x4',null,'red','iron','iron'],sightOwn=[{red:1},{red:1},{red:1},{x4:1},{},{red:1},{iron:1},{iron:1}];
 var SOPT=[{id:'iron',name:'기본 조준기 (아이언 사이트)',price:0,desc:'부착된 조준기를 떼고 기본 조준기를 사용합니다'},{id:'red',name:'레드도트',price:100,desc:'배율 없음 · 빠르고 시야가 넓은 조준'},{id:'x2',name:'2배율 스코프',price:180,desc:'조준 시 2배 확대, 조준 중 감도 낮아짐'},{id:'x3',name:'3배율 스코프',price:260,desc:'조준 시 3배 확대, 조준 중 감도 낮아짐'},{id:'x4',name:'4배율 스코프',price:340,desc:'조준 시 4배 확대, 조준 중 감도 낮아짐'}];
 function rebuild(i){
@@ -3370,6 +3370,7 @@ function enemyShot(e,idx){
   tracer(ex,ey,ez,tx+jx,ty+jy-.2,tz+jz,e.type==='heavy'?0xff3a4a:0xffa04a,.07,.12);flash3(ex,ey,ez,3);smoke(ex,ey,ez,1,.4,.15,.15,.14,.7,.4);
   if(hit)hurtPlayer(def.dmg,ex,ez);
 }
+function carryMax(){return devOn('unl')?99:(MP.on?2:3);}
 function devOn(k){return DEV[k]&&!MP.on;}
 function hurtPlayer(amount,ax,az){
   if(devOn('god')&&!DEV.force)return;
@@ -3759,7 +3760,7 @@ function wavesUpdate(dt){
   }
 }
 function bsUpdate(dt){
-  if(OUT.on&&!OUT.cage&&!own[5]&&Math.abs(P.y)<1.2&&Math.hypot(P.x-OUT.ix,P.z-OUT.iz)<1.6){
+  if(OUT.on&&!OUT.cage&&!own[5]&&ord.length<carryMax()&&Math.abs(P.y)<1.2&&Math.hypot(P.x-OUT.ix,P.z-OUT.iz)<1.6){
     own[5]=true;if(ord.indexOf(5)<0)ord.push(5);wm_[5]=WEAPONS[5].mag;wr_[5]=WEAPONS[5].reserve;
     sfx('pick');toast('숨겨진 무기  GLOCK G18 획득!',2400);refreshSlots();switchWeapon(5);
   }
@@ -4909,7 +4910,7 @@ function exitToMenu(){
 }
 $('btn-resume').addEventListener('click',resume);
 /* ---------- developer mode ---------- */
-var DEVN=[['god','무적'],['ammo','무한 탄약'],['fly','날아다니기'],['money','무한 돈']];
+var DEVN=[['god','무적'],['ammo','무한 탄약'],['fly','날아다니기'],['money','무한 돈'],['unl','무제한 총기 휴대']];
 function devBadge(){
   var on=DEVN.filter(function(d){return DEV[d[0]];}).map(function(d){return d[1];});
   var b=$('devbadge');b.textContent=on.length?'DEV · '+on.join(' · '):'';b.hidden=!on.length;
@@ -4996,8 +4997,15 @@ function statLine(w){
   return '피해 '+Math.round(w.dmg)+(w.pellets>1?'×'+w.pellets:'')+' · 분당 '+Math.round(60/w.rate)+'발 · 탄창 '+w.mag+' · 장전 '+w.reload.toFixed(1)+'초 · 이동 '+Math.round(w.move*100)+'%';
 }
 function buyWeapon(i){
-  if(own[i]||coins<WPRICE[i])return;
+  if(own[i]||coins<WPRICE[i]||ord.length>=carryMax())return;
   coins-=WPRICE[i];own[i]=true;if(ord.indexOf(i)<0)ord.push(i);if(i===6){wm_[6]=1;wr_[6]=1;}if(i===7){wm_[7]=1;wr_[7]=5;}if(i===8){wm_[8]=1;wr_[8]=1;}pendingSwitch=i;sfx('pick');refreshSlots();renderShop();
+}
+function dropWeapon(i){
+  if(!own[i]||i===4)return;
+  own[i]=false;var x=ord.indexOf(i);if(x>=0)ord.splice(x,1);
+  if(i===6)wm_[6]=wr_[6]=0;if(i===7){wm_[7]=0;wr_[7]=0;}if(i===8&&!GRS.cook){wm_[8]=0;wr_[8]=0;}
+  if(cur===i)pendingSwitch=4;if(i===5)shopTab=0;
+  sfx('pick');refreshSlots();renderShop();
 }
 function buySight(i,o){
   if(!own[i]||sightSel[i]===o.id)return;
@@ -5023,8 +5031,9 @@ function renderShop(){
   });
   var list=$('s-list'),i=shopTab;list.innerHTML='';
   sec(list,BASE[i].name);
-  if(!own[i])srow(list,BASE[i].name+' 구매',statLine(WEAPONS[i]),'◆ '+WPRICE[i],function(){buyWeapon(i);},coins<WPRICE[i]);
-  else srow(list,'현재 성능',statLine(WEAPONS[i]),'보유중',null,true,'owned');
+  var cm=carryMax(),cfull=ord.length>=cm,cnt=ord.length+(cm>=99?'':'/'+cm);
+  if(!own[i])srow(list,BASE[i].name+' 구매',cfull?'휴대 가득 ('+cnt+') · 다른 무기를 버리면 구매할 수 있습니다':statLine(WEAPONS[i])+' · 휴대 '+cnt,cfull?'휴대 가득':'◆ '+WPRICE[i],function(){buyWeapon(i);},cfull||coins<WPRICE[i]);
+  else{srow(list,'현재 성능',statLine(WEAPONS[i])+' · 휴대 '+cnt,'보유중',null,true,'owned');srow(list,'무기 버리기','이 무기를 내려놓습니다 (환불 없음)','버리기',function(){dropWeapon(i);},false);}
   if(i===8&&own[8]){var gt=wm_[8]+wr_[8];srow(list,'수류탄 보충','1개 추가 · 보유 '+gt+'/'+GRN.max,gt>=GRN.max?'최대 보유':'◆ '+WPRICE[8],function(){if(coins<WPRICE[8]||wm_[8]+wr_[8]>=GRN.max)return;coins-=WPRICE[8];if(wm_[8]<1&&!GRS.cook)wm_[8]=1;else wr_[8]++;sfx('pick');renderShop();},gt>=GRN.max||coins<WPRICE[8]);}
   if(i<6){
   sec(list,'조준기');
