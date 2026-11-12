@@ -346,30 +346,7 @@ body{background:var(--bg);color:var(--fg);font-family:var(--display);overflow:hi
               <option value="off">끔</option>
             </select>
           </label>
-          <div class="envinfo" id="env-info" style="font:600 13px var(--display);letter-spacing:.06em;color:var(--ice);padding:6px 0 2px">환경</div>
-          <label for="s-eseason">계절
-            <select id="s-eseason"><option value="auto">랜덤 (시작할 때 무작위)</option><option value="0">봄</option><option value="1">여름</option><option value="2">가을</option><option value="3">겨울</option></select>
-          </label>
-          <label for="s-etime">시간
-            <select id="s-etime"><option value="auto">자동 (랜덤 시작, 흘러감)</option><option value="manual">수동 (아래 슬라이더)</option></select>
-          </label>
-          <label for="s-ehour">시각 <output id="o-ehour">12:00</output><input id="s-ehour" type="range" min="0" max="23.99" step="0.25" value="12"></label>
-          <label for="s-espeed">시간 흐름
-            <select id="s-espeed"><option value="stop">정지</option><option value="slow">느림 (하루 36분)</option><option value="norm">보통 (하루 16분)</option><option value="fast">빠름 (하루 5분)</option></select>
-          </label>
-          <label for="s-eweather">날씨
-            <select id="s-eweather"><option value="auto">랜덤</option><option value="clear">맑음</option><option value="cloudy">흐림</option><option value="rain">비</option><option value="storm">폭풍우</option><option value="fog">안개</option><option value="snow">눈</option></select>
-          </label>
-          <label for="s-ecloud">구름 종류
-            <select id="s-ecloud"><option value="auto">자동 (계절·시간·날씨에 따라)</option><option value="none">없음</option><option value="cirrus">권운 (새털구름)</option><option value="cumulus">적운 (뭉게구름)</option><option value="stratocumulus">층적운 (두루마리구름)</option><option value="stratus">층운 (안개구름)</option><option value="nimbostratus">난층운 (비구름)</option><option value="cumulonimbus">적란운 (소나기구름)</option></select>
-          </label>
-          <label for="s-ecamt">구름 양
-            <select id="s-ecamt"><option value="few">적게</option><option value="norm">보통</option><option value="many">많이</option></select>
-          </label>
-          <label for="s-emoon">달 모양
-            <select id="s-emoon"><option value="auto">랜덤</option><option value="0">삭 (신월)</option><option value="0.125">초승달</option><option value="0.25">상현달</option><option value="0.375">차오르는 달</option><option value="0.5">보름달</option><option value="0.625">기우는 달</option><option value="0.75">하현달</option><option value="0.875">그믐달</option></select>
-          </label>
-          <label for="s-esound">자연의 소리<input id="s-esound" type="checkbox" checked></label>
+          <button class="chip" id="btn-envp" type="button">🌤 환경 설정 (계절·시간·날씨) 열기</button>
           <label for="s-touch">터치 조작 UI<input id="s-touch" type="checkbox"></label>
         </div>
       </div>
@@ -459,6 +436,34 @@ body{background:var(--bg);color:var(--fg);font-family:var(--display);overflow:hi
   </div>
 </div>
 
+<div id="envp" style="display:none;position:fixed;inset:0;z-index:99999;background:rgba(6,10,16,.94);overflow:auto;-webkit-overflow-scrolling:touch">
+  <div style="max-width:520px;margin:0 auto;padding:18px 16px 40px;display:flex;flex-direction:column;gap:12px">
+    <div style="display:flex;justify-content:space-between;align-items:center"><div style="font:700 18px var(--display);letter-spacing:.06em;color:var(--ice)">환경 설정</div><button class="chip" id="btn-envp-x" type="button">닫기 ✕</button></div>
+    <label for="s-eseason">계절
+            <select id="s-eseason"><option value="auto">랜덤 (시작할 때 무작위)</option><option value="0">봄</option><option value="1">여름</option><option value="2">가을</option><option value="3">겨울</option></select>
+          </label>
+          <label for="s-etime">시간
+            <select id="s-etime"><option value="auto">자동 (랜덤 시작, 흘러감)</option><option value="manual">수동 (아래 슬라이더)</option></select>
+          </label>
+          <label for="s-ehour">시각 <output id="o-ehour">12:00</output><input id="s-ehour" type="range" min="0" max="23.99" step="0.25" value="12"></label>
+          <label for="s-espeed">시간 흐름
+            <select id="s-espeed"><option value="stop">정지</option><option value="slow">느림 (하루 36분)</option><option value="norm">보통 (하루 16분)</option><option value="fast">빠름 (하루 5분)</option></select>
+          </label>
+          <label for="s-eweather">날씨
+            <select id="s-eweather"><option value="auto">랜덤</option><option value="clear">맑음</option><option value="cloudy">흐림</option><option value="rain">비</option><option value="storm">폭풍우</option><option value="fog">안개</option><option value="snow">눈</option></select>
+          </label>
+          <label for="s-ecloud">구름 종류
+            <select id="s-ecloud"><option value="auto">자동 (계절·시간·날씨에 따라)</option><option value="none">없음</option><option value="cirrus">권운 (새털구름)</option><option value="cumulus">적운 (뭉게구름)</option><option value="stratocumulus">층적운 (두루마리구름)</option><option value="stratus">층운 (안개구름)</option><option value="nimbostratus">난층운 (비구름)</option><option value="cumulonimbus">적란운 (소나기구름)</option></select>
+          </label>
+          <label for="s-ecamt">구름 양
+            <select id="s-ecamt"><option value="few">적게</option><option value="norm">보통</option><option value="many">많이</option></select>
+          </label>
+          <label for="s-emoon">달 모양
+            <select id="s-emoon"><option value="auto">랜덤</option><option value="0">삭 (신월)</option><option value="0.125">초승달</option><option value="0.25">상현달</option><option value="0.375">차오르는 달</option><option value="0.5">보름달</option><option value="0.625">기우는 달</option><option value="0.75">하현달</option><option value="0.875">그믐달</option></select>
+          </label>
+          <label for="s-esound">자연의 소리<input id="s-esound" type="checkbox" checked></label>
+  </div>
+</div>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"></script>
 <script>
@@ -1999,6 +2004,11 @@ function envUiSync(force){
 function envEnsureManual(){}
 function bindEnv(){
   if(!$('s-eseason'))return;
+  (function(){var ep=$('envp'),ob=$('btn-envp'),cb=$('btn-envp-x');
+    function op(){ep.style.display='block';}function cl(){ep.style.display='none';}
+    if(ob)ob.addEventListener('click',op);if(cb)cb.addEventListener('click',cl);
+    ep.addEventListener('keydown',function(e){if(e.key==='Escape'){cl();e.stopPropagation();}});
+  })();
   var d={eSeason:'auto',eTime:'auto',eWeather:'auto',eMoon:'auto',eSpeed:'norm',eSound:true};
   for(var k in d)if(settings[k]===undefined)settings[k]=d[k];
   function save(){saveJSON('hollow-settings',settings);}
