@@ -2380,7 +2380,7 @@ var mSteel2=new THREE.MeshPhongMaterial({color:0x32383d,shininess:60,specular:0x
 var mBrass=new THREE.MeshPhongMaterial({color:0xc9a13c,shininess:90,specular:0xfff0b0});
 var mCopper=new THREE.MeshPhongMaterial({color:0x8a4b2a,shininess:50,specular:0x553322});
 var mOlive=new THREE.MeshPhongMaterial({color:0x4f5a3a,shininess:12,specular:0x1a1f12});
-var mGlove=new THREE.MeshPhongMaterial({color:0xcf9f7a,shininess:8,specular:0x2a1c12});
+var mGlove=new THREE.MeshPhongMaterial({color:0x8a8458,shininess:10,specular:0x2a2a22});
 var mSleeve=new THREE.MeshPhongMaterial({color:0x4d5a3c,shininess:6,specular:0x111111});
 var mRed=new THREE.MeshBasicMaterial({color:0xff3030});
 var woodTex=mkTex(64,128,function(g,w,h){
@@ -2436,14 +2436,14 @@ function mkHandV(parent){
   var g=new THREE.Group();parent.add(g);var h=new THREE.Group();g.add(h);
   part(h,mGlove,.052,.085,.034,0,0,.042);part(h,mGlove,.052,.06,.03,0,.005,-.04);part(h,mGlove,.016,.016,.06,-.032,.032,-.002);part(h,mGlove,.058,.07,.03,0,.01,.078);
   var fa=new THREE.Group();g.add(fa);fa.position.set(0,.01,.09);part(fa,mSleeve,.07,.07,.48,0,0,.24);fa.rotation.set(.45,.22,0);
-  fa.visible=false;g.traverse(function(o){if(o.isMesh&&o.material===mGlove)o.scale.multiplyScalar(.72);});
+  g.traverse(function(o){if(o.isMesh&&o.material===mGlove)o.scale.multiplyScalar(.85);});
   return {g:g,h:h};
 }
 function mkHandH(parent){
   var g=new THREE.Group();parent.add(g);
   part(g,mGlove,.058,.032,.07,0,0,.02);part(g,mGlove,.056,.024,.04,0,.002,-.035);part(g,mGlove,.016,.016,.055,.036,.018,-.02);part(g,mGlove,.062,.04,.03,0,0,.064);
   var fa=new THREE.Group();g.add(fa);fa.position.set(0,0,.075);part(fa,mSleeve,.07,.07,.5,0,0,.25);fa.rotation.set(.3,-.32,0);
-  fa.visible=false;g.traverse(function(o){if(o.isMesh&&o.material===mGlove)o.scale.multiplyScalar(.72);});
+  g.traverse(function(o){if(o.isMesh&&o.material===mGlove)o.scale.multiplyScalar(.85);});
   return g;
 }
 var vm=new THREE.Group();wScene.add(vm);
@@ -5265,6 +5265,11 @@ function visual(dt,alpha){
     var wv=WEAPONS[cur],spr=P.sprinting?1:0,ad=P.ads;
     var ax=VM_POS.x*(1-ad)+Math.cos(P.bob)*.012*bobSm*(1-ad)-P.sway[0]*.6*(1-ad*.8);
     var ay=VM_POS.y+(-wv.dotY-VM_POS.y)*ad-by*.35*(1-ad)-dip-P.sway[1]*.5*(1-ad*.8)-spr*.05;
+    if(P.reloading&&(cur===0||cur===2||cur===3||cur===5)){
+      /* lift the gun up and toward the middle while reloading so the magazine well stays in view */
+      var lk=ss(0,.16,rpn)-ss(.84,1,rpn),LK=[.11,0,.08,.07,0,.06][cur]||0,LX=[.15,0,.11,.1,0,.08][cur]||0;
+      ay+=lk*LK;ax-=lk*LX;
+    }
     vm.position.set(ax,ay,VM_POS.z+vmKick*.045*wv.vmk2);
     vm.rotation.set(vmKick*.07*wv.vmk2*(1-ad*.6)+tilt*.6+spr*.18,spr*-.35+ry,P.sway[0]*.4*(1-ad)+tilt*rollK+rz);
     rpgRound.visible=wm_[6]>0||(cur===6&&P.reloading&&rpn>.5);
