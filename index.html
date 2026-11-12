@@ -656,11 +656,19 @@ function outRay(ox,oy,oz,dx,dy,dz,tMax){
 var igSt=false;
 function solid(ix,iz){
   if(ix<0||iz<0||ix>=W||iz>=H)return !(OUT.on&&ix>=OUT.cx0&&ix<=OUT.cx1&&iz>=OUT.cz0&&iz<=OUT.cz1);
-  return G[iz*W+ix]===1&&!(igSt&&GK[iz*W+ix]===8);
+  var c=iz*W+ix;
+  if(G[c]!==1||(igSt&&GK[c]===8))return false;
+  if(solidY>-1e8&&lowOb(c)&&GTop[c]<=solidY+.06)return false; /* player standing above a low obstacle */
+  return true;
 }
+var solidY=-1e9;
+/* low, ground-hugging obstacles (crates, sandbags, window sills, ...) the player can climb onto */
+function lowOb(c){var k=GK[c];return k!==4&&k!==9&&GTop[c]-GBase[c]<=1.7;}
+function lowTopAt(x,z){var ix=Math.floor(x/CELL),iz=Math.floor(z/CELL);if(ix<0||iz<0||ix>=W||iz>=H)return -1;var c=iz*W+ix;return(G[c]===1&&lowOb(c))?GTop[c]:-1;}
 /* floor height for the player: ground, the keep's stairs, 2nd floor slab and roof slab (heights 3.2 / 6.4) */
 function floorAt(x,z,y){
   var f=groundY(x,z);
+  if(solidY>-1e8){var ot=lowTopAt(x,z);if(ot>f&&ot<=y+.75)f=ot;}
   if(!KEEP.on)return f;
   var u=(x-KEEP.x)/CELL,v=(z-KEEP.z)/CELL;
   if(u<0||v<0||u>=KEEP.iw||v>=KEEP.id)return f;
@@ -3628,7 +3636,7 @@ function switchWeapon(n){
 
 /* ---------- player ---------- */
 function movePlayer(dt){
-  P.px=P.x;P.py=P.y;P.pz=P.z;
+  P.px=P.x;P.py=P.y;P.pz=P.z;solidY=P.y;
   var ix=(K.KeyD?1:0)-(K.KeyA?1:0)+joy.x,iz=(K.KeyS?1:0)-(K.KeyW?1:0)+joy.y,len=Math.hypot(ix,iz);
   if(len>1){ix/=len;iz/=len;}
   var sprint=(K.ShiftLeft||K.ShiftRight||(joy.mag>.95&&joy.y<-.3))&&iz<0&&P.ads<.3&&!(firing&&WEAPONS[cur].auto&&wm_[cur]>0);
@@ -3647,6 +3655,10 @@ function movePlayer(dt){
   var nx=P.x+P.vx*dt;if(hi||(!collides(nx,P.z,P.r)&&!stairBlock(nx,P.z,P.y,P.vx>0?1:-1,0)))P.x=nx;else P.vx=0;
   var nz=P.z+P.vz*dt;if(hi||(!collides(P.x,nz,P.r)&&!stairBlock(P.x,nz,P.y,0,P.vz>0?1:-1)))P.z=nz;else P.vz=0;
   igSt=false;
+  if((K.Space||joy.jump)&&!flying&&(wx||wz)){ /* mantle: jump into a low obstacle and climb onto it */
+    var wl=Math.hypot(wx,wz),lt=lowTopAt(P.x+wx/wl*(P.r+.18),P.z+wz/wl*(P.r+.18));
+    if(lt>P.y+.15&&lt<=P.y+1.55){var need=Math.sqrt(2*21*(lt-P.y+.3));if(P.vy<need){P.vy=need;P.onGround=false;}}
+  }
   if(hi){P.x=Math.max(.8,Math.min(W*CELL-.8,P.x));P.z=Math.max(.8,Math.min(H*CELL-.8,P.z));}
   var gy=floorAt(P.x,P.z,P.y);
   if(flying){
@@ -3709,11 +3721,11 @@ function devTick(){
 function update(dt){
   time+=dt;updateRockets(dt);mslUpdate(dt);mortUpdate(dt);devTick();pondStep(dt);
   if(MP.on){
-    if(MP.alive){movePlayer(dt);bsUpdate(dt);weaponUpdate(dt);}
+    if(MP.alive){movePlayer(dt);solidY=-1e9;bsUpdate(dt);weaponUpdate(dt);}
     if(P.hurt>0)P.hurt-=dt;
     return;
   }
-  movePlayer(dt);bsUpdate(dt);weaponUpdate(dt);
+  movePlayer(dt);solidY=-1e9;bsUpdate(dt);weaponUpdate(dt);
   var pcx=Math.floor(P.x/CELL),pcz=Math.floor(P.z/CELL);
   flowT-=dt;if(flowT<=0||pcx!==fcx||pcz!==fcz){buildFlow(P.x,P.z);fcx=pcx;fcz=pcz;flowT=.3;}
   wavesUpdate(dt);
