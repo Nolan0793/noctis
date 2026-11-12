@@ -2404,16 +2404,18 @@ function cylO(parent,mat,d,len,x,y,z){var o=new THREE.Mesh(CYLO,mat);o.scale.set
 function cyl(parent,mat,d,len,x,y,z){var o=new THREE.Mesh(CYL,mat);o.scale.set(d,d,len);o.position.set(x,y,z);parent.add(o);return o;}
 /* red dot: open frame (see-through window) with a glowing dot, returns the dot height used for ADS alignment */
 function addRedDot(grp,baseY,z){
+  /* one glass pane in a single frame; the dot sits on the pane (like a real reflex sight) */
   var y0=baseY+.012,h=.05;
-  part(grp,mSight,.05,.012,.09,0,baseY+.006,z);
-  [.035,-.035].forEach(function(dz){
-    part(grp,mSight,.005,h,.012,-.023,y0+h/2,z+dz);part(grp,mSight,.005,h,.012,.023,y0+h/2,z+dz);
-    part(grp,mSight,.05,.006,.012,0,y0+h,z+dz);
-  });
+  part(grp,mSight,.05,.012,.05,0,baseY+.006,z);
+  part(grp,mSight,.005,h,.014,-.023,y0+h/2,z);part(grp,mSight,.005,h,.014,.023,y0+h/2,z);
+  part(grp,mSight,.05,.006,.014,0,y0+h,z);
+  var pane=new THREE.Mesh(new THREE.PlaneGeometry(.041,h),new THREE.MeshBasicMaterial({color:0xa8d4ff,transparent:true,opacity:.1,depthWrite:false,side:THREE.DoubleSide}));
+  pane.position.set(0,y0+h/2,z);grp.add(pane);
   var dot=new THREE.Mesh(new THREE.PlaneGeometry(.011,.011),new THREE.MeshBasicMaterial({map:dotTex,transparent:true,blending:THREE.AdditiveBlending,depthTest:false,depthWrite:false}));
-  dot.position.set(0,y0+h/2,z-.01);dot.renderOrder=20;grp.add(dot);
+  dot.position.set(0,y0+h/2,z+.003);dot.renderOrder=20;grp.add(dot);
   return y0+h/2;
 }
+var scopeEl=$('scope');
 var sightG=[{},{},{},{},{},{},{},{}],SIGHTBY=[.072,.055,.059,.047,0,.052,.045,.05],SOFF={iron:.032,red:.037,x2:.045,x3:.045,x4:.045},SZOOM={iron:1,red:1,x2:2,x3:3,x4:4},SSENS={iron:.55,red:.55,x2:.5,x3:.4,x4:.33};
 /* every optic is its own group so the shop can swap them: iron sights, red dot, 2x/3x/4x scopes */
 function mkSights(i,gun,by,zc,zf,k){
@@ -4650,6 +4652,8 @@ var MSLR=30;
   g.scale.setScalar(1.5);g.visible=false;g.frustumCulled=false;g.userData.noShadow=true;scene.add(g);MSL.g=g;MSL.glow=gl;MSL.core=co;
 })();
 function mslClear(){if(typeof MSL==='undefined'||!MSL||!MSL.g)return;if(MSL.jet)jetStop();MSL.on=false;MSL.g.visible=false;}
+/* time warp: starts slow and speeds up, so the missile is fastest in the steep final dive */
+function mslU(s){s=Math.min(1,Math.max(0,s));return .3*s+.7*Math.pow(s,2.2);}
 function mslPos(u,out){
   var k=1-u;out.x=MSL.sx+(MSL.tx-MSL.sx)*u;out.z=MSL.sz+(MSL.tz-MSL.sz)*u;out.y=MSL.ty+(MSL.sy-MSL.ty)*k+MSL.ap*4*u*k;
 }
@@ -4660,7 +4664,7 @@ function mslSpawn(tx,tz,own){
   var R0=430,sx=cx+Math.cos(a)*R0,sz=cz+Math.sin(a)*R0,sy=130;
   try{sy=Math.max(130,mtH(sx-cx,sz-cz)+12);}catch(e){}
   MSL.sx=sx;MSL.sz=sz;MSL.sy=sy;MSL.tx=tx;MSL.tz=tz;MSL.ty=groundY(tx,tz);MSL.own=own;
-  MSL.T=Math.max(6,Math.hypot(tx-sx,tz-sz)/62);MSL.t=0;MSL.tk=0;MSL.wt=0;MSL.on=true;MSL.g.visible=true;
+  MSL.T=Math.max(5,Math.hypot(tx-sx,tz-sz)/74);MSL.t=0;MSL.tk=0;MSL.wt=0;MSL.on=true;MSL.g.visible=true;
   MSL.px=sx;MSL.py=sy;MSL.pz=sz;MSL.g.position.set(sx,sy,sz);
   jetStart();
   return true;
@@ -4671,8 +4675,8 @@ function spatialFar(x,z){
 }
 function mslUpdate(dt){
   if(!MSL.on)return;
-  MSL.t+=dt;var u=Math.min(1,MSL.t/MSL.T);
-  mslPos(u,_mp);mslPos(Math.min(1,u+.01),_mq);
+  MSL.t+=dt;var s_=Math.min(1,MSL.t/MSL.T),u=mslU(s_);
+  mslPos(u,_mp);mslPos(mslU(Math.min(1,s_+.01)),_mq);
   var hx=_mq.x-_mp.x,hy=_mq.y-_mp.y,hz=_mq.z-_mp.z,hl=Math.hypot(hx,hy,hz)||1;hx/=hl;hy/=hl;hz/=hl;
   MSL.g.position.set(_mp.x,_mp.y,_mp.z);MSL.g.lookAt(_mp.x-hx,_mp.y-hy,_mp.z-hz);
   var fl=1+Math.random()*.3;MSL.glow.scale.set(15*fl,15*fl,1);MSL.core.scale.set(5.5*fl,5.5*fl,1);MSL.fl.forEach(function(f,i){var q=[13,10,7][i]*(.85+Math.random()*.4);f.scale.set(q,q,1);});
@@ -4684,7 +4688,7 @@ function mslUpdate(dt){
     if(Math.random()<.5)bPuff(tx,ty,tz,(Math.random()-.5),(Math.random()-.5),(Math.random()-.5),1.2,3.5,1.2,0,.7);
   }
   jetUpdate(dt,_mp.x,_mp.y,_mp.z);
-  if(u>=1)mslBoom(MSL.tx,MSL.ty,MSL.tz,MSL.own);
+  if(s_>=1)mslBoom(MSL.tx,MSL.ty,MSL.tz,MSL.own);
 }
 function mslBoom(x,y,z,own){
   jetStop();MSL.on=false;MSL.g.visible=false;
@@ -5271,6 +5275,7 @@ function visual(dt,alpha){
     if(rlq){ax+=rlq[0]*rlk;ay+=rlq[1]*rlk;}
     vm.position.set(ax,ay,VM_POS.z+vmKick*.045*wv.vmk2);
     vm.rotation.set(vmKick*.07*wv.vmk2*(1-ad*.6)+tilt*.6+spr*.18,spr*-.35+ry,P.sway[0]*.4*(1-ad)+tilt*rollK+rz);
+    var scp=!!wv.scope,sa_=scp?ss(.55,.9,P.ads):0;scopeEl.style.opacity=sa_;vm.visible=!(scp&&P.ads>.9);
     if(rlq)vm.rotation.set(vm.rotation.x+rlq[2]*rlk,vm.rotation.y+rlq[3]*rlk,vm.rotation.z+rlq[4]*rlk);
     rpgRound.visible=wm_[6]>0||(cur===6&&P.reloading&&rpn>.5);
     if(cur===8)grVM(dt,rpn);
