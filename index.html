@@ -360,6 +360,7 @@ body{background:var(--bg);color:var(--fg);font-family:var(--display);overflow:hi
         </dl>
         <div class="set" id="setbox">
           <label for="s-sens">감도 <output id="o-sens">1.0</output><input id="s-sens" type="range" min="0.2" max="10" step="0.1" value="1"></label>
+          <label for="s-ads">조준 감도 <output id="o-ads">1.0</output><input id="s-ads" type="range" min="0.2" max="3" step="0.05" value="1"></label>
           <label for="s-fov">시야각 <output id="o-fov">80</output><input id="s-fov" type="range" min="60" max="110" step="1" value="80"></label>
           <label for="s-q">렌더 품질
             <select id="s-q">
@@ -481,7 +482,7 @@ if(!THREE){$('menu-err').hidden=false;return;}
 /* ---------- persistence ---------- */
 function loadJSON(k){try{return JSON.parse(localStorage.getItem(k))||{};}catch(e){return {};}}
 function saveJSON(k,v){try{localStorage.setItem(k,JSON.stringify(v));}catch(e){}}
-var settings=Object.assign({sens:1,fov:80,quality:'auto',gfx:'auto',eSeason:'auto',eTime:'auto',eHour:12,eWeather:'auto',eMoon:'auto',eSpeed:'norm',eSound:true,eCloud:'auto',eCAmt:'norm'},loadJSON('hollow-settings'));
+var settings=Object.assign({sens:1,ads:1,fov:80,quality:'auto',gfx:'auto',eSeason:'auto',eTime:'auto',eHour:12,eWeather:'auto',eMoon:'auto',eSpeed:'norm',eSound:true,eCloud:'auto',eCAmt:'norm'},loadJSON('hollow-settings'));
 var best=Object.assign({score:0,wave:0},loadJSON('hollow-best'));
 var COARSE=!!(window.matchMedia&&matchMedia('(pointer:coarse)').matches);
 var touchMode=settings.touch===undefined?COARSE:!!settings.touch;
@@ -4884,7 +4885,7 @@ window.addEventListener('keydown',function(e){
 window.addEventListener('keyup',function(e){K[e.code]=false;});
 window.addEventListener('blur',function(){K={};firing=false;adsHeld=false;});
 function look(dx,dy){
-  var s=.0022*settings.sens*(1-P.ads*(1-(WEAPONS[cur].adsSens||.55)));
+  var s=.0022*settings.sens*(1-P.ads*(1-(WEAPONS[cur].adsSens||.55)*(settings.ads||1)));
   P.yaw-=dx*s;P.pitch-=dy*s;P.pitch=Math.max(-1.5,Math.min(1.5,P.pitch));
   P.sway[0]+=dx*.00035;P.sway[1]+=dy*.00035;
 }
@@ -4967,6 +4968,8 @@ function bindSettings(){
   var s=$('s-sens'),f=$('s-fov'),q=$('s-q');
   s.value=settings.sens;f.value=settings.fov;q.value=settings.quality;
   $('o-sens').textContent=Number(settings.sens).toFixed(2);$('o-fov').textContent=settings.fov;
+  var ad=$('s-ads');ad.value=settings.ads||1;$('o-ads').textContent=Number(settings.ads||1).toFixed(2);
+  ad.addEventListener('input',function(){settings.ads=parseFloat(ad.value);$('o-ads').textContent=settings.ads.toFixed(2);saveJSON('hollow-settings',settings);});
   s.addEventListener('input',function(){settings.sens=parseFloat(s.value);$('o-sens').textContent=settings.sens.toFixed(2);saveJSON('hollow-settings',settings);});
   f.addEventListener('input',function(){settings.fov=parseInt(f.value,10);$('o-fov').textContent=settings.fov;saveJSON('hollow-settings',settings);});
   q.addEventListener('change',function(){settings.quality=q.value;saveJSON('hollow-settings',settings);applyQuality();});
