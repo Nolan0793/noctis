@@ -3668,7 +3668,7 @@ function weaponUpdate(dt){
   P.idle+=dt;
   if(w.melee){knS.idle=(knS.idle||0)+dt;}
   if(knS.t>=0){knS.t+=dt;if(!knS.done&&knS.t>=knS.hitAt){knS.done=true;knifeHit();}if(knS.t>=knS.dur)knS.t=-1;}
-  if(P.idle>.12&&P.recoil>0){var rec=Math.min(P.recoil,dt*w.recov);P.pitch-=rec;P.recoil-=rec;}
+  if(P.idle>.12&&P.recoil>0){var rec=Math.min(P.recoil,dt*w.recov);P.recoil-=rec;}
   var adsT=(adsHeld&&!P.reloading&&!P.sprinting&&!w.melee&&!w.grenade)?1:0;P.ads+=(adsT-P.ads)*Math.min(1,dt*12);
   if(P.reloading&&w.shell){
     var pv=P.reloadT;P.reloadT+=dt;
