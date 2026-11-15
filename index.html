@@ -378,6 +378,7 @@ body{background:var(--bg);color:var(--fg);font-family:var(--display);overflow:hi
               <option value="high">높음 (그림자·블룸)</option>
               <option value="mid">중간 (블룸·색보정)</option>
               <option value="off">끔</option>
+              <option value="min">최소 (저사양 PC · 구름/그림자/후처리 모두 끔, 60fps 목표)</option>
             </select>
           </label>
           <button class="chip" id="btn-envp" type="button">🌤 환경 설정 (계절·시간·날씨) 열기</button>
@@ -847,7 +848,8 @@ var wScene=new THREE.Scene(), wCam=new THREE.PerspectiveCamera(52,1,0.01,10);
 var vw=2,vh=2,ratio=1,ratioMax=1;
 function applyQuality(){
   var dpr=window.devicePixelRatio||1,q=settings.quality;
-  if(q==='perf'){ratioMax=0.6;ratio=0.6;}
+  if(GX.low&&q==='auto'){ratioMax=.6;ratio=.5;}
+  else if(q==='perf'){ratioMax=0.6;ratio=0.6;}
   else if(q==='bal'){ratioMax=1;ratio=1;}
   else if(q==='hi'){ratioMax=Math.min(dpr,touchMode?1.5:2);ratio=ratioMax;}
   else if(touchMode){ratioMax=Math.min(dpr,1.25);ratio=Math.min(ratioMax,.8);}
@@ -1190,12 +1192,15 @@ function gfxLight(){
 }
 function gfxLevel(){
   var s=settings.gfx||'auto';
-  if(s==='off')return 0;if(s==='mid')return 1;if(s==='high')return 2;if(s==='ultra')return 3;
+  if(s==='off'||s==='min')return 0;if(s==='mid')return 1;if(s==='high')return 2;if(s==='ultra')return 3;
   return (touchMode||COARSE)?0:3;
 }
 function applyGfx(){
   var lv=gfxLevel(),wantShadow=lv>=2;
   GX.level=lv;GX.ultra=lv>=3;flashL.visible=lv>=1;
+  var low=(settings.gfx==='min');GX.low=low;STEP=low?1/60:1/90;
+  if(typeof skyMat!=='undefined'&&skyMat&&skyMat.uniforms)skyMat.uniforms.uLow.value=low?1:0;
+  if(flare)flare.visible=!low;camera.far=low?240:700;camera.updateProjectionMatrix();
   if(wantShadow!==GX.shadow){
     GX.shadow=wantShadow;renderer.shadowMap.enabled=wantShadow;renderer.shadowMap.type=THREE.PCFSoftShadowMap;
     moon.castShadow=wantShadow;
@@ -1358,14 +1363,14 @@ var skyMat=new THREE.ShaderMaterial({
     uSun:{value:new THREE.Vector3(0,-1,0)},uMoon:{value:new THREE.Vector3(0,-1,0)},
     uZen:{value:new THREE.Color(0x05070d)},uHor:{value:new THREE.Color(0x15171c)},uFog:{value:new THREE.Color(0x1b1b1c)},
     uCloudLit:{value:new THREE.Color(0x222630)},uCloudDark:{value:new THREE.Color(0x0d1016)},uRidge:{value:new THREE.Color(0x2a3a2a)},uSunCol:{value:new THREE.Color(1,.9,.7)},
-    uCloud:{value:.1},uCu:{value:0},uSt:{value:0},uCb:{value:0},uCi:{value:0},uZ0:{value:1200},uTh:{value:1200},uSteps:{value:16},uLQ:{value:1},uDark:{value:0},uLd:{value:new THREE.Vector3(0,1,0)},uLc:{value:new THREE.Color(1,1,1)},uAmbT:{value:new THREE.Color(.5,.6,.8)},uAmbB:{value:new THREE.Color(.5,.5,.5)},uStars:{value:1},uTime:{value:0},uIllum:{value:1},uDay:{value:0},uFlash:{value:0},
+    uCloud:{value:.1},uCu:{value:0},uSt:{value:0},uCb:{value:0},uCi:{value:0},uZ0:{value:1200},uTh:{value:1200},uSteps:{value:16},uLQ:{value:1},uDark:{value:0},uLow:{value:0},uLd:{value:new THREE.Vector3(0,1,0)},uLc:{value:new THREE.Color(1,1,1)},uAmbT:{value:new THREE.Color(.5,.6,.8)},uAmbB:{value:new THREE.Color(.5,.5,.5)},uStars:{value:1},uTime:{value:0},uIllum:{value:1},uDay:{value:0},uFlash:{value:0},
     uSunAmt:{value:0},uMoonAmt:{value:1},uMoonR:{value:.05},uSunR:{value:.032},uWind:{value:new THREE.Vector2(0,0)},uHaze:{value:.8},uSnow:{value:0}
   },
   vertexShader:'varying vec3 vDir;void main(){vDir=position;gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.);}',
   fragmentShader:[
     'precision highp float;',
     'uniform vec3 uSun,uMoon,uZen,uHor,uFog,uCloudLit,uCloudDark,uRidge,uSunCol;',
-    'uniform float uCloud,uStars,uTime,uIllum,uDay,uFlash,uSunAmt,uMoonAmt,uMoonR,uSunR,uHaze,uSnow,uCu,uSt,uCb,uCi,uZ0,uTh,uSteps,uLQ,uDark;uniform vec3 uLd,uLc,uAmbT,uAmbB;',
+    'uniform float uCloud,uStars,uTime,uIllum,uDay,uFlash,uSunAmt,uMoonAmt,uMoonR,uSunR,uHaze,uSnow,uCu,uSt,uCb,uCi,uZ0,uTh,uSteps,uLQ,uDark,uLow;uniform vec3 uLd,uLc,uAmbT,uAmbB;',
     'uniform vec2 uWind;varying vec3 vDir;',
     'float h1(vec2 p){p=fract(p*vec2(123.34,456.21));p+=dot(p,p+45.32);return fract(p.x*p.y);}',
     'float n2(vec2 p){vec2 i=floor(p),f=fract(p);f=f*f*(3.-2.*f);return mix(mix(h1(i),h1(i+vec2(1.,0.)),f.x),mix(h1(i+vec2(0.,1.)),h1(i+vec2(1.,1.)),f.x),f.y);}',
@@ -1448,7 +1453,8 @@ var skyMat=new THREE.ShaderMaterial({
     ' float sdk=smoothstep(cos(uSunR),cos(uSunR*.82),dot(d,uSun));',
     ' col=mix(col,uSunCol*2.6,sdk*uSunAmt*(1.-uCloud*.6));',
     /* volumetric clouds */
-    ' if(up>.004){',
+    ' if(uLow>.5&&up>.004){col=mix(col,mix(uAmbB,uAmbT,.5)*1.1,clamp(uCloud*.55+uCu*.3+uSt*.2,0.,.8)*smoothstep(.0,.25,up));}',
+    ' if(up>.004&&uLow<.5){',
     '  float jit=fract(52.9829189*fract(dot(gl_FragCoord.xy,vec2(.06711056,.00583715))));',
     '  if(uCi>.02){vec2 cp=d.xz/(up+.15)+uWind*40.;float ci=fbm(vec2(cp.x*.35,cp.y*1.6)+3.)*.6+fbm3(vec2(cp.x*.9,cp.y*3.4))*.4;',
     '   float a=smoothstep(.5-uCi*.12,.78,ci)*uCi*smoothstep(.02,.2,up)*.85;',
@@ -1462,8 +1468,8 @@ var skyMat=new THREE.ShaderMaterial({
     '  col=col*(1.-al)+rgb;',
     ' }',
     /* distant mountains */
-    ' float rg1=.018+.06*fbm(vec2(az*1.7,2.3))+.02*fbm3(vec2(az*7.,5.));',
-    ' float rg2=.006+.03*fbm(vec2(az*3.1+7.,9.))+.012*fbm3(vec2(az*11.,1.));',
+    ' float rg1=uLow>.5?.05+.03*sin(az*3.1):.018+.06*fbm(vec2(az*1.7,2.3))+.02*fbm3(vec2(az*7.,5.));',
+    ' float rg2=uLow>.5?.02+.015*sin(az*5.3+2.):.006+.03*fbm(vec2(az*3.1+7.,9.))+.012*fbm3(vec2(az*11.,1.));',
     ' vec3 far=mix(uFog,uRidge,.38);vec3 near=mix(uFog,uRidge,.62);',
     ' float snowLine=smoothstep(.04,.08,up)*uSnow;',
     ' far=mix(far,vec3(.88,.92,.97)*max(uFog.r+uFog.g+uFog.b,.2)*.5+uFog*.5,snowLine*.8);',
@@ -5426,9 +5432,9 @@ function frame(now){
   if(adaptT>=1.2){
     var f=adaptN/adaptT;adaptT=0;adaptN=0;
     if(settings.quality==='auto'&&state==='playing'){
-      var flr=(touchMode?.5:.8);
-      if(f<50&&ratio>flr){ratio=Math.max(flr,ratio-.1);resize();}
-      else if(f>=57&&ratio<ratioMax){ratio=Math.min(ratioMax,ratio+.05);resize();}
+      var flr=GX.low?.3:(touchMode?.5:.8);
+      if(f<(GX.low?56:50)&&ratio>flr){ratio=Math.max(flr,ratio-.1);resize();}
+      else if(f>=(GX.low?62:57)&&ratio<ratioMax){ratio=Math.min(ratioMax,ratio+.05);resize();}
     }
   }
 }
