@@ -282,7 +282,7 @@ body{background:var(--bg);color:var(--fg);font-family:var(--display);overflow:hi
       <div class="ammo" id="h-ammo"><span id="h-mag">30</span><em>/ <span id="h-res">150</span></em></div>
       <div class="rbar" id="h-rwrap"><i id="h-rbar"></i></div>
     </div>
-    <div id="pcw"><button type="button" id="pw0" style="display:none">1<small>HK416</small></button><button type="button" id="pw1" style="display:none">2<small>M1014</small></button><button type="button" id="pw2" style="display:none">3<small>PKM</small></button><button type="button" id="pw3" style="display:none">4<small>AWM</small></button><button type="button" id="pw4">5<small>KNIFE</small></button><button type="button" id="pw5" style="display:none">6<small>G18</small></button><button type="button" id="pw6" style="display:none">7<small>RPG-7</small></button><button type="button" id="pw7" style="display:none">8<small>MORT</small></button><button type="button" id="pw8" style="display:none">9<small>수류탄</small></button><em>Tab: 커서</em></div>
+    <div id="pcw"><button type="button" id="pw0" style="display:none">1<small>HK416</small></button><button type="button" id="pw1" style="display:none">2<small>M1014</small></button><button type="button" id="pw2" style="display:none">3<small>PKM</small></button><button type="button" id="pw3" style="display:none">4<small>AWM</small></button><button type="button" id="pw4">5<small>KNIFE</small></button><button type="button" id="pw5" style="display:none">6<small>G18</small></button><button type="button" id="pw6" style="display:none">7<small>RPG-7</small></button><button type="button" id="pw7" style="display:none">8<small>MORT</small></button><button type="button" id="pw8" style="display:none">9<small>수류탄</small></button><button type="button" id="pw9" style="display:none">7<small>DEAGLE</small></button><em>Tab: 커서</em></div>
     <div id="toast"></div>
     <div id="pop"></div>
     <div id="mpb"></div>
@@ -307,6 +307,7 @@ body{background:var(--bg);color:var(--fg);font-family:var(--display);overflow:hi
       <button class="tb slot lock" id="tb-w6" type="button" style="display:none">7<small>RPG</small></button>
       <button class="tb slot lock" id="tb-w7" type="button" style="display:none">8<small>MORT</small></button>
       <button class="tb slot lock" id="tb-w8" type="button" style="display:none">9<small>GRN</small></button>
+      <button class="tb slot lock" id="tb-w9" type="button" style="display:none">7<small>DEAGLE</small></button>
       <button class="tb slot" id="tb-dep" type="button" style="display:none">E<small>거치</small></button>
       <button class="tb slot" id="tb-msl" type="button" style="display:none">G<small>MSL</small></button>
       <button class="tb slot" id="tb-shop" type="button" aria-label="상점">◆<small>SHOP</small></button>
@@ -2459,7 +2460,7 @@ function addRedDot(grp,baseY,z){
   dot.position.set(0,y0+.025,z+.003);dot.renderOrder=20;grp.add(dot);
   return y0+.025;
 }
-var sightG=[{},{},{},{},{},{},{},{}],SIGHTBY=[.072,.055,.059,.047,0,.052,.045,.05],SOFF={iron:.032,red:.037,x2:.045,x3:.045,x4:.045},SZOOM={iron:1,red:1,x2:2,x3:3,x4:4},SSENS={iron:.55,red:.55,x2:.5,x3:.4,x4:.33};
+var sightG=[{},{},{},{},{},{},{},{},{},{}],SIGHTBY=[.072,.055,.059,.047,0,.052,.045,.05,0,.066],SOFF={iron:.032,red:.037,x2:.045,x3:.045,x4:.045},SZOOM={iron:1,red:1,x2:2,x3:3,x4:4},SSENS={iron:.55,red:.55,x2:.5,x3:.4,x4:.33};
 /* every optic is its own group so the shop can swap them: iron sights, red dot, 2x/3x/4x scopes */
 function mkSights(i,gun,by,zc,zf,k){
   var g,o=sightG[i],kk=k||1;
@@ -2662,6 +2663,38 @@ var glHandR=mkHandV(glock);glHandR.g.position.set(0,-.052,.045);glHandR.h.rotati
 var glHandL=mkHandH(glock);glHandL.position.set(GLK.g[0],GLK.g[1],GLK.g[2]);
 mkSights(5,glock,.052,-.02,-.15,.6);var glockDot=.089;
 
+/* ===== Desert Eagle .50AE: long stainless barrel with a ribbed top rail, heavy slide, black grip ===== */
+var mDe=new THREE.MeshPhongMaterial({color:0xc4c9d0,shininess:90,specular:0x8a8f96}),mDe2=new THREE.MeshPhongMaterial({color:0x9ea4ac,shininess:70,specular:0x666a70});
+var deagle=new THREE.Group();
+part(deagle,mDe,.034,.03,.275,0,.04,-.09);                       // barrel block / upper
+part(deagle,mDe,.02,.012,.2,0,.06,-.125);                        // raised top rib
+for(var dri=0;dri<7;dri++)part(deagle,mDe2,.022,.004,.012,0,.067,-.2+dri*.024);   // rail ribs
+part(deagle,mDe,.037,.038,.085,0,.04,.018);                      // slide rear
+for(var dsi=0;dsi<5;dsi++)part(deagle,mDe2,.0385,.03,.004,0,.04,-.012+dsi*.014);   // slide serrations
+part(deagle,mDe2,.032,.022,.21,0,.012,-.05);                     // frame
+part(deagle,mBlk2,.03,.008,.1,0,-.002,-.16);                     // under rail
+cyl(deagle,mBlk,.016,.012,0,.04,-.232);                          // muzzle
+part(deagle,mBlk,.006,.018,.014,0,.064,.058);                    // hammer
+part(deagle,mBlk,.004,.012,.022,-.0195,.045,.03);                // safety lever
+part(deagle,mBlk,.004,.008,.02,.0195,.02,-.02);                  // slide stop
+var deGrip=part(deagle,mBlk2,.035,.115,.062,0,-.058,.05);deGrip.rotation.x=-.2;
+part(deagle,mDe2,.036,.014,.064,0,-.008,.045);                   // grip top / beavertail
+part(deagle,mDe2,.01,.008,.065,0,-.012,-.03);part(deagle,mDe2,.01,.03,.008,0,-.006,-.06);   // trigger guard
+part(deagle,mBlk,.005,.02,.006,0,0,-.022);                       // trigger
+function mkDeMag(){
+  var m=new THREE.Group();
+  m.stk=part(m,mBlk2,.026,.07,.044,0,-.1,.06);part(m,mBlk,.03,.008,.05,0,-.137,.068);       // 7-round magazine + base plate
+  var ex=new THREE.Group();m.add(ex);m.ext=ex;ex.visible=false;
+  part(ex,mBlk2,.026,.09,.044,0,-.18,.076);part(ex,mBlk,.03,.008,.05,0,-.228,.086);         // 17-round extension
+  return m;
+}
+var deMag=mkDeMag();deagle.add(deMag);
+var deMag2=mkDeMag();deMag2.visible=false;deagle.add(deMag2);
+var DEK={g:[-.003,-.06,-.07],m:[0,-.16,.06],d:[0,-.28,.06],p:[-.12,-.34,.1]};
+var deHandR=mkHandV(deagle);deHandR.g.position.set(0,-.058,.05);deHandR.h.rotation.x=-.2;
+var deHandL=mkHandH(deagle);deHandL.position.set(DEK.g[0],DEK.g[1],DEK.g[2]);
+mkSights(9,deagle,.066,-.03,-.2,.6);
+
 /* ===== the yard outside the boundary wall: stone walls, a pedestal with the G18 ===== */
 if(OUT.on){(function(){
   var wm=new THREE.MeshPhongMaterial({color:0x7b776e,shininess:3,specular:0x0a0a0a}),cx,cz;
@@ -2796,7 +2829,7 @@ for(var gri=-2;gri<=2;gri++){var grr=new THREE.Mesh(new THREE.TorusGeometry(.052
 part(grHoldG,mSteel2,.034,.03,.034,0,.074,0);
 var grLever=new THREE.Group();grLever.position.set(.026,.07,0);grHoldG.add(grLever);part(grLever,mAlu,.012,.12,.026,.022,-.045,0);part(grLever,mAlu,.05,.012,.026,0,.006,0);
 var grPin=new THREE.Mesh(new THREE.TorusGeometry(.02,.0035,6,14),mBrass);grPin.position.set(-.01,.088,0);grHoldG.add(grPin);
-var GROUPS=[rifle,scat,pkm,awm,kn,glock,rpg,mort,gren];GROUPS.forEach(function(g,i){vm.add(g);g.visible=i===0;});
+var GROUPS=[rifle,scat,pkm,awm,kn,glock,rpg,mort,gren,deagle];GROUPS.forEach(function(g,i){vm.add(g);g.visible=i===0;});
 
 /* attachments (visual only) */
 var ATTV=[
@@ -2806,11 +2839,12 @@ var ATTV=[
  {grip:[.03,.09,.03,0,-.09,-.62],laser:[.03,.03,.07,.045,-.01,-.6],supp:[.06,.06,.3,0,.014,-1.34]},
  null,
  {grip:[.03,.08,.03,0,-.075,-.1],laser:[.02,.02,.05,.02,-.012,-.12],supp:[.034,.034,.16,0,.034,-.24]},
- null
+ null,null,null,
+ {grip:[.03,.08,.03,0,-.05,-.16],laser:[.02,.02,.05,.024,-.004,-.17],supp:[.042,.042,.18,0,.04,-.32]}
 ];
-var attVis=[{},{},{},{},{},{},{},{},{}];
+var attVis=[{},{},{},{},{},{},{},{},{},{}];
 GROUPS.forEach(function(g,i){
-  if(i===4||i>=6)return;
+  if(i===4||(i>=6&&i!==9))return;
   var sp=ATTV[i],a;
   ['mag','grip'].forEach(function(k){if(sp[k]){a=sp[k];attVis[i][k]=part(g,mDark,a[0],a[1],a[2],a[3],a[4],a[5]);attVis[i][k].visible=false;}});
   a=sp.supp;attVis[i].supp=cyl(g,mBlk2,a[0],a[2],a[3],a[4],a[5]);attVis[i].supp.visible=false;
@@ -2821,9 +2855,10 @@ attVis[0].mag={set visible(v){rMag.ext.visible=v;rMag2.ext.visible=v;}};
 attVis[3].mag={set visible(v){awMag.ext.visible=v;awMag2.ext.visible=v;}};
 attVis[2].mag={set visible(v){pkAmmoA.ext.visible=v;pkAmmoB.ext.visible=v;}};
 attVis[5].mag={set visible(v){[glMag,glMag2].forEach(function(m){m.ext.visible=v;m.stk.visible=!v;});}};
+attVis[9].mag={set visible(v){deMag.ext.visible=v;deMag2.ext.visible=v;}};
 function updateAttVis(){
-  for(var si=0;si<8;si++)for(var sk in sightG[si])sightG[si][sk].visible=sightSel[si]===sk;
-  for(var i=0;i<8;i++)for(var k in attVis[i])attVis[i][k].visible=!!(have[i]&&have[i][k]);
+  for(var si=0;si<10;si++)for(var sk in sightG[si])sightG[si][sk].visible=sightSel[si]===sk;
+  for(var i=0;i<10;i++)for(var k in attVis[i])attVis[i][k].visible=!!(have[i]&&have[i][k]);
 }
 var flash=new THREE.Mesh(new THREE.PlaneGeometry(.34,.34),new THREE.MeshBasicMaterial({map:glowTex,transparent:true,blending:THREE.AdditiveBlending,depthWrite:false,depthTest:false}));
 flash.visible=false;vm.add(flash);
@@ -2926,9 +2961,30 @@ function glockAnim(t){
   RA.dip+=.025*Math.max(0,1-Math.abs(t-.74)/.03);
   return RA;
 }
+/* Desert Eagle: same mag-swap choreography as the G18 */
+function deAnim(t){
+  var L=deHandL,o=DEK;
+  if(t<0){
+    L.position.set(o.g[0],o.g[1],o.g[2]);deMag.visible=true;deMag.position.set(0,0,0);deMag2.visible=false;
+    RA.dip=RA.tilt=RA.rz=RA.ry=0;return RA;
+  }
+  var env=ss(0,.12,t)-ss(.88,1,t);
+  RA.dip=.03*env;RA.tilt=.2*env;RA.rz=.3*env;RA.ry=-.08*env;
+  deMag2.visible=false;
+  if(t<.12){lerp3(L,o.g,o.m,ss(0,.12,t));deMag.visible=true;deMag.position.set(0,0,0);}
+  else if(t<.3){lerp3(L,o.m,o.d,ss(.12,.3,t));deMag.visible=true;deMag.position.set(L.position.x-o.m[0],L.position.y-o.m[1],L.position.z-o.m[2]);}
+  else if(t<.45){var u=(t-.3)/.15;lerp3(L,o.d,o.p,ss(0,1,u));deMag.visible=u<.85;deMag.position.set(o.d[0]-o.m[0],o.d[1]-o.m[1]-1.8*u*u,0);}
+  else if(t<.74){
+    lerp3(L,o.p,o.m,ss(.55,.74,t));deMag.visible=false;deMag2.visible=true;
+    deMag2.position.set(L.position.x-o.m[0],L.position.y-o.m[1],L.position.z-o.m[2]);
+  }
+  else{lerp3(L,o.m,o.g,ss(.74,1,t));deMag.visible=true;deMag.position.set(0,0,0);}
+  RA.dip+=.025*Math.max(0,1-Math.abs(t-.74)/.03);
+  return RA;
+}
 var VM_POS=new THREE.Vector3(.2,-.2,-.42);
 /* reload pose per weapon: [x,y,pitch,yaw,roll] blended in while reloading so the mag well faces the player */
-var RLP={0:[-.1,.14,.5,.55,-.3],3:[-.16,.2,.4,.45,-.4],5:[-.1,.14,.4,.4,-.3]};
+var RLP={0:[-.1,.14,.5,.55,-.3],3:[-.16,.2,.4,.45,-.4],5:[-.1,.14,.4,.4,-.3],9:[-.1,.14,.4,.4,-.3]};
 
 /* ---------- shared weapon data ---------- */
 var BASE=[
@@ -2940,33 +2996,34 @@ var BASE=[
   {name:'G18',cues:[[.14,'magout'],[.68,'magin']],rate:60/1300,dmg:10,pellets:1,spread:.0075,hip:15,mag:33,reserve:200,maxRes:400,reload:1.5,kick:.014,auto:true,range:60,fall:false,move:1.02,snd:'glock',bloomAdd:.09,bloomDecay:1.5,recov:.55,vmk:.35,vmk2:.7,flashZ:-.24,muzzleZ:.22,tc:0xffe0a0,tw:.022,tl:.05,dotY:glockDot,wob:2.6,shake:.2},
   {name:'RPG-7',rocket:true,rate:1.2,dmg:360,pellets:1,spread:.0012,hip:14,mag:1,reserve:1,maxRes:6,reload:3,kick:.085,auto:false,range:200,fall:false,move:.8,snd:'rpg',bloomAdd:.5,bloomDecay:1.2,recov:.4,vmk:1.6,vmk2:2.6,flashZ:-1.0,muzzleZ:.95,tc:0xffd89a,tw:.02,tl:.02,dotY:.077,shake:.7},
   {name:'박격포 120mm',mortar:true,rate:.8,dmg:380,pellets:1,spread:0,hip:30,mag:1,reserve:4,maxRes:10,reload:1.1,kick:.06,auto:false,range:400,fall:false,move:.7,snd:'mortar',bloomAdd:.3,bloomDecay:1.2,recov:.4,vmk:1.2,vmk2:2,flashZ:-.8,muzzleZ:.8,tc:0xffd89a,tw:.02,tl:.02,dotY:.082,shake:.5},
-  {name:'수류탄',grenade:true,rate:.55,dmg:280,pellets:0,spread:0,hip:0,mag:1,reserve:2,maxRes:2,reload:.9,kick:0,auto:false,range:60,fall:false,move:1,snd:'swish',bloomAdd:0,bloomDecay:2,recov:1,vmk:.4,vmk2:1,flashZ:0,muzzleZ:0,tc:0,tw:0,tl:0,dotY:.1}
+  {name:'수류탄',grenade:true,rate:.55,dmg:280,pellets:0,spread:0,hip:0,mag:1,reserve:2,maxRes:2,reload:.9,kick:0,auto:false,range:60,fall:false,move:1,snd:'swish',bloomAdd:0,bloomDecay:2,recov:1,vmk:.4,vmk2:1,flashZ:0,muzzleZ:0,tc:0,tw:0,tl:0,dotY:.1},
+  {name:'DESERT EAGLE',deagle:true,cues:[[.14,'magout'],[.68,'magin']],rate:.6,dmg:50,pellets:1,spread:.002,hip:14,mag:7,reserve:35,maxRes:70,reload:1.9,kick:.06,auto:false,range:150,fall:false,move:1,snd:'deagle',bloomAdd:.45,bloomDecay:1.6,recov:.5,vmk:1.2,vmk2:2.4,flashZ:-.3,muzzleZ:.28,tc:0xfff2c8,tw:.04,tl:.08,dotY:.098,shake:.5}
 ];
 var WEAPONS=BASE.map(function(b){return Object.assign({},b);});
-var wm_=[30,7,125,5,0,0,1,0,0], wr_=[150,35,250,20,0,0,1,0,0], cur=4;
+var wm_=[30,7,125,5,0,0,1,0,0,7], wr_=[150,35,250,20,0,0,1,0,0,35], cur=4;
 var ATT=[
   {id:'mag',name:'확장 탄창',desc:'탄창 용량 +50%, 재장전 12% 느려짐',base:260},
   {id:'grip',name:'수직 손잡이',desc:'반동 -30%, 연사 중 탄퍼짐 증가 -30%, 기본 탄퍼짐 -10%',base:210},
   {id:'laser',name:'레이저 사이트',desc:'미조준 사격 탄퍼짐 -45%',base:230},
   {id:'supp',name:'소음기',desc:'반동 -12%, 총구 섬광 제거',base:190}
 ];
-var PM=[1,.9,1.4,1.6,1,1,1,1], WPRICE=[70,350,900,1200,0,0,1000,800,50], ROCKETP=250,AMMOP=200;
-var DEV={on:false,god:false,ammo:false,fly:false,money:false,unl:false,boom:0,from:'pause',force:false}, ord=[], coins=0, own=[false,false,false,false,true,false,false,false,false], have=[{},{},{},{},{},{},{},{}];
-var sightSel=['red','red','red','x4',null,'red','iron','iron'],sightOwn=[{red:1},{red:1},{red:1},{x4:1},{},{red:1},{iron:1},{iron:1}];
+var PM=[1,.9,1.4,1.6,1,1,1,1,1,1], WPRICE=[70,350,900,1200,0,0,1000,800,50,150], ROCKETP=250,AMMOP=200;
+var DEV={on:false,god:false,ammo:false,fly:false,money:false,unl:false,boom:0,from:'pause',force:false}, ord=[], coins=0, own=[false,false,false,false,true,false,false,false,false,false], have=[{},{},{},{},{},{},{},{},{},{}];
+var sightSel=['red','red','red','x4',null,'red','iron','iron',null,'iron'],sightOwn=[{red:1},{red:1},{red:1},{x4:1},{},{red:1},{iron:1},{iron:1},{},{iron:1}];
 var SOPT=[{id:'iron',name:'기본 조준기 (아이언 사이트)',price:0,desc:'부착된 조준기를 떼고 기본 조준기를 사용합니다'},{id:'red',name:'레드도트',price:100,desc:'배율 없음 · 빠르고 시야가 넓은 조준'},{id:'x2',name:'2배율 스코프',price:180,desc:'조준 시 2배 확대, 조준 중 감도 낮아짐'},{id:'x3',name:'3배율 스코프',price:260,desc:'조준 시 3배 확대, 조준 중 감도 낮아짐'},{id:'x4',name:'4배율 스코프',price:340,desc:'조준 시 4배 확대, 조준 중 감도 낮아짐'}];
 function rebuild(i){
   var b=BASE[i],o=Object.assign({},b),h=have[i];
-  if(h.mag){o.mag=i===5?100:Math.round(b.mag*1.5);o.reload=i===5?b.reload:b.reload*1.12;}
+  if(h.mag){o.mag=i===5?100:(i===9?17:Math.round(b.mag*1.5));o.reload=i===5?b.reload:b.reload*1.12;}
   if(h.grip){o.kick*=.7;o.bloomAdd*=.7;o.spread*=.9;}
   if(h.laser){o.hip*=.55;}
   if(h.supp){o.kick*=.88;o.nofl=true;}
-  var sg=sightSel[i]||'red';o.dotY=SIGHTBY[i]+SOFF[sg]*((i===5&&sg!=='iron')?.6:1);o.zoom=SZOOM[sg];o.scope=o.zoom>1;o.adsSens=SSENS[sg];
+  var sg=sightSel[i]||'red';o.dotY=SIGHTBY[i]+SOFF[sg]*(((i===5||i===9)&&sg!=='iron')?.6:1);o.zoom=SZOOM[sg];o.scope=o.zoom>1;o.adsSens=SSENS[sg];
   WEAPONS[i]=o;
 }
 function resetEconomy(){
-  ord=[];coins=0;own=[false,false,false,false,true,false,false,false,false];have=[{},{},{},{},{},{},{},{}];sightSel=['red','red','red','x4',null,'red','iron','iron'];sightOwn=[{red:1},{red:1},{red:1},{x4:1},{},{red:1},{iron:1},{iron:1}];
+  ord=[];coins=0;own=[false,false,false,false,true,false,false,false,false,false];have=[{},{},{},{},{},{},{},{},{},{}];sightSel=['red','red','red','x4',null,'red','iron','iron',null,'iron'];sightOwn=[{red:1},{red:1},{red:1},{x4:1},{},{red:1},{iron:1},{iron:1},{},{iron:1}];
   clearRockets();grClear();dropsClear();
-  [0,1,2,3,5,6,7].forEach(rebuild);if(typeof MSL!=="undefined"&&MSL)MSL.n=0;
+  [0,1,2,3,5,6,7,9].forEach(rebuild);if(typeof MSL!=="undefined"&&MSL)MSL.n=0;
   updateAttVis();
 }
 function curSpread(w){
@@ -3040,6 +3097,7 @@ var SFX={
   awmout:function(){N(.04,2200,2,.3);T(.1,200,90,.3,'square');T(.1,90,50,.25,'sine',0,.15);},
   awmin:function(){T(.05,600,400,.3,'square');N(.06,1500,2,.35,'bandpass',0,900);T(.08,250,120,.3,'square',0,.06);},
   awmbolt:function(){N(.06,2400,2,.35);T(.07,500,220,.3,'square');N(.05,3400,3,.25,'bandpass',0,0,.07);},
+  deagle:function(){var r=.96+Math.random()*.08;N(.04,3000*r,.8,.95);N(.16,1100*r,.6,.85,'bandpass',0,350);T(.18,150*r,46,.85,'triangle');N(.45,520,.4,.24,'lowpass',0,180,.03);},
   glock:function(){var r=.94+Math.random()*.12;N(.025,4200*r,.8,.6);N(.06,1900*r,.6,.55,'bandpass',0,600);T(.06,240*r,90,.45,'triangle');N(.16,900,.4,.1,'lowpass',0,300,.03);},
   pkm:function(){var r=.94+Math.random()*.12;N(.04,3000*r,.8,.9);N(.12,900*r,.6,.9,'bandpass',0,300);T(.14,130*r,50,.9,'triangle');N(.03,3500,3,.15,'bandpass',0,0,.05);N(.4,450,.4,.22,'lowpass',0,150,.06);},
   rpg:function(){var me=SFX;N(.06,3200,.8,1.1);T(.3,150,36,1.2,'sawtooth');N(.5,800,.5,1.0,'lowpass',0,140);N(1.5,2600,.5,.3,'bandpass',0,420,.05);T(.7,70,24,.9,'sine');me._later(160,function(){N(.9,1500,.6,.35,'bandpass',0,300);});},
@@ -3272,6 +3330,8 @@ function spawnEnemy(type,pos,guard){
   e.armL.rotation.set(0,0,0);e.armR.rotation.set(0,0,0);
   if(!guard)ws.alive++;return true;
 }
+/* Desert Eagle: fixed shots-to-kill. head = 1 shot (boss 2); body: rusher 1, grunt 2, heavy/boss 3 */
+function deDmg(e,head){var h=e.def.hp;if(e.type==='boss')return head?h/2+1:h/3+1;if(head||e.type==='rusher')return h+1;return e.type==='heavy'?h/3+1:h/2+1;}
 function damageEnemy(e,amount,head){
   e.hp-=amount;e.flash=.09;stats.hits++;e.gotHit=1.5;
   if(e.def.ranged&&e.type!=='heavy'&&e.mode==='engage'&&Math.random()<.35)e.wantCover=true;
@@ -3441,7 +3501,7 @@ function updatePickups(dt){
     if(p.life<=0){p.active=false;p.m.visible=false;continue;}
     if(Hypot2(p.x-P.x,p.z-P.z)<1.7){
       if(p.type===0){if(P.hp<100){P.hp=Math.min(100,P.hp+25);toast('+25 체력',900);}else continue;}
-      else{wr_[0]=Math.min(WEAPONS[0].maxRes,wr_[0]+45);wr_[1]=Math.min(WEAPONS[1].maxRes,wr_[1]+8);wr_[2]=Math.min(WEAPONS[2].maxRes,wr_[2]+60);wr_[3]=Math.min(WEAPONS[3].maxRes,wr_[3]+5);if(own[5])wr_[5]=Math.min(WEAPONS[5].maxRes,wr_[5]+60);if(own[6]&&wm_[6]+wr_[6]<RMAX)wr_[6]++;if(own[7])wr_[7]=Math.min(WEAPONS[7].maxRes,wr_[7]+1);if(own[8]&&wm_[8]+wr_[8]+(GRS.cook?1:0)<GRN.max)wr_[8]++;toast('+ 탄약',900);}
+      else{wr_[0]=Math.min(WEAPONS[0].maxRes,wr_[0]+45);wr_[1]=Math.min(WEAPONS[1].maxRes,wr_[1]+8);wr_[2]=Math.min(WEAPONS[2].maxRes,wr_[2]+60);wr_[3]=Math.min(WEAPONS[3].maxRes,wr_[3]+5);if(own[5])wr_[5]=Math.min(WEAPONS[5].maxRes,wr_[5]+60);if(own[9])wr_[9]=Math.min(WEAPONS[9].maxRes,wr_[9]+14);if(own[6]&&wm_[6]+wr_[6]<RMAX)wr_[6]++;if(own[7])wr_[7]=Math.min(WEAPONS[7].maxRes,wr_[7]+1);if(own[8]&&wm_[8]+wr_[8]+(GRS.cook?1:0)<GRN.max)wr_[8]++;toast('+ 탄약',900);}
       sfx('pick');p.active=false;p.m.visible=false;continue;
     }
     p.m.position.set(p.x,groundY(p.x,p.z)+.7+Math.sin(p.t*3)*.12,p.z);p.m.rotation.y=p.t*2;p.m.rotation.x=.4;
@@ -3660,10 +3720,10 @@ function fire(){
     tracer(muz.x,muz.y,muz.z,px_,py_,pz_,w.tc,w.tw,w.tl);
     if(p===0&&MP.on)mpShot(muz.x,muz.y,muz.z,px_,py_,pz_);
     if(TR.type===5){
-      var dmg5=w.dmg*(TR.head?2.2:1);if(w.fall)dmg5*=Math.max(.2,Math.min(1,1-(TR.t-3)/14));
+      var dmg5=w.deagle?(TR.head?100:50):w.dmg*(TR.head?2.2:1);if(w.fall)dmg5*=Math.max(.2,Math.min(1,1-(TR.t-3)/14));
       emit(px_,py_,pz_,6,3.5,1,.45,.2,.45,9);mpHit(TR.r,dmg5,TR.head,cur);hitAny=true;
     }else if(TR.type===4){
-      var dmg=w.dmg*(TR.head?2.2:1);if(w.fall)dmg*=Math.max(.2,Math.min(1,1-(TR.t-3)/14));
+      var dmg=w.deagle?deDmg(TR.e,TR.head):w.dmg*(TR.head?2.2:1);if(w.fall)dmg*=Math.max(.2,Math.min(1,1-(TR.t-3)/14));
       emit(px_,py_,pz_,6,3.5,1,.45,.2,.45,9);
       damageEnemy(TR.e,dmg,TR.head);hitAny=true;
       if(TR.head)hitm(true);else hitm(false);
@@ -3725,7 +3785,7 @@ function cycleWeapon(d){var sq=[4].concat(ord,own[8]?[8]:[]),ix=sq.indexOf(cur);
 function switchWeapon(n){
   if(n===cur||n<0||n>=WEAPONS.length||GRS.cook)return;
   if(!own[n]){if(n!==5)toast('상점에서 구매하세요',1200);return;}
-  cur=n;P.reloading=false;P.swapT=[.32,.32,.5,.55,.3,.3,.7,.45,.35][cur];knS.t=-1;latch=true;GROUPS.forEach(function(g,i){g.visible=i===cur;});sfx('swap');refreshSlots();
+  cur=n;P.reloading=false;P.swapT=[.32,.32,.5,.55,.3,.3,.7,.45,.35,.34][cur];knS.t=-1;latch=true;GROUPS.forEach(function(g,i){g.visible=i===cur;});sfx('swap');refreshSlots();
   $('h-wname').textContent=WEAPONS[cur].name;
 }
 
@@ -3800,7 +3860,7 @@ function wavesUpdate(dt){
     }
   }else if(ws.alive<=0){
     var bonus=150*ws.n,cb=60*ws.n;score+=bonus;coins+=cb;
-    P.hp=Math.min(100,P.hp+40);wr_[0]=Math.min(WEAPONS[0].maxRes,wr_[0]+50);wr_[1]=Math.min(WEAPONS[1].maxRes,wr_[1]+10);wr_[2]=Math.min(WEAPONS[2].maxRes,wr_[2]+60);wr_[3]=Math.min(WEAPONS[3].maxRes,wr_[3]+5);if(own[5])wr_[5]=Math.min(WEAPONS[5].maxRes,wr_[5]+60);if(own[8]&&wm_[8]+wr_[8]<GRN.max)wr_[8]++;
+    P.hp=Math.min(100,P.hp+40);wr_[0]=Math.min(WEAPONS[0].maxRes,wr_[0]+50);wr_[1]=Math.min(WEAPONS[1].maxRes,wr_[1]+10);wr_[2]=Math.min(WEAPONS[2].maxRes,wr_[2]+60);wr_[3]=Math.min(WEAPONS[3].maxRes,wr_[3]+5);if(own[5])wr_[5]=Math.min(WEAPONS[5].maxRes,wr_[5]+60);if(own[9])wr_[9]=Math.min(WEAPONS[9].maxRes,wr_[9]+14);if(own[8]&&wm_[8]+wr_[8]<GRN.max)wr_[8]++;
     toast('웨이브 '+ws.n+' 클리어  +'+bonus+'  ◆'+cb+(touchMode?'':'   [B] 상점'),2600);ws.inter=4.5;
   }
 }
@@ -3837,7 +3897,7 @@ function update(dt){
 /* ---------- multiplayer (PvP deathmatch over the room capability) ---------- */
 var MP={on:false,rm:null,unsubs:[],myPeer:'',name:'Player',code:'',alive:true,respT:0,prot:0,k:0,d:0,
   sendT:0,shotT:0,hitT:0,hq:{},feed:[],scoreT:0,lastAtk:'',lastW:0,lastHead:0,killAt:{},connected:true};
-var remotes={},avPool=[],MP_MAXR=14,MPCOINS=0,MPRES=[150,35,250,20,0,200,1,4,2];
+var remotes={},avPool=[],MP_MAXR=14,MPCOINS=0,MPRES=[150,35,250,20,0,200,1,4,2,35];
 function mpName(v){return String(v==null?'':v).replace(/[\u0000-\u001f\u007f<>]/g,'').trim().slice(0,12);}
 function mpNum(v,lo,hi,def){v=+v;if(!isFinite(v))return def;return v<lo?lo:(v>hi?hi:v);}
 function mpMsg(t){var m=$('mp-msg');if(m)m.textContent=t;}
@@ -3879,7 +3939,7 @@ function mpOnPeers(ch){
     r.name=mpName(pr.n)||'Player';
     r.x=mpNum(pr.x,0,W*CELL,r.x);r.y=mpNum(pr.y,-5,20,r.y);r.z=mpNum(pr.z,0,H*CELL,r.z);
     r.yaw=mpNum(pr.yaw,-1e3,1e3,r.yaw);r.pitch=mpNum(pr.pitch,-1.6,1.6,r.pitch);
-    r.w=mpNum(pr.w,0,8,0)|0;r.hp=mpNum(pr.hp,0,100,100);r.k=mpNum(pr.k,0,9999,0)|0;r.d=mpNum(pr.d,0,9999,0)|0;
+    r.w=mpNum(pr.w,0,9,0)|0;r.hp=mpNum(pr.hp,0,100,100);r.k=mpNum(pr.k,0,9999,0)|0;r.d=mpNum(pr.d,0,9999,0)|0;
     var al=pr.a===0||pr.a===false?false:true;
     if(r.alive&&!al){r.dieT=0;}
     r.alive=al;
@@ -3923,7 +3983,7 @@ function mpHit(rp,dmg,head,wi){
 }
 function mpOnShot(m){
   if(m.isMe||!MP.on)return;var d=m.data;if(!d||!d.a||!d.b)return;
-  var w=mpNum(d.w,0,8,-1)|0;if(w<0||!WEAPONS[w]||WEAPONS[w].melee)return;
+  var w=mpNum(d.w,0,9,-1)|0;if(w<0||!WEAPONS[w]||WEAPONS[w].melee)return;
   var a=[mpNum(d.a[0],-50,200,0),mpNum(d.a[1],-5,30,0),mpNum(d.a[2],-50,200,0)],b=[mpNum(d.b[0],-50,200,0),mpNum(d.b[1],-5,30,0),mpNum(d.b[2],-50,200,0)];
   if(w===8){
     var gf=mpNum(d.f,.05,3,1.5);grSpawn(a[0],a[1],a[2],(b[0]-a[0])*10,(b[1]-a[1])*10,(b[2]-a[2])*10,gf,2);
@@ -3941,7 +4001,7 @@ function mpOnShot(m){
 function mpOnHit(m){
   if(m.isMe||!MP.on||!MP.alive)return;var d=m.data;if(!d||d.to!==MP.myPeer||!MP.myPeer)return;
   var dmg=mpNum(d.d,0,400,0);if(dmg<=0)return;
-  var w=mpNum(d.w,0,8,0)|0,r=remotes[m.peer];
+  var w=mpNum(d.w,0,9,0)|0,r=remotes[m.peer];
   if(r&&WEAPONS[w]){
     if(!r.alive)return;
     var dist=Math.hypot(r.cx-P.x,r.cz-P.z);
@@ -3954,7 +4014,7 @@ function mpOnDied(m){
   if(m.isMe||!MP.on)return;var d=m.data;if(!d)return;
   var v=remotes[m.peer],vn=v?v.name:'누군가';
   var kn=d.by===MP.myPeer?MP.name:(remotes[d.by]?remotes[d.by].name:'?');
-  var w=mpNum(d.w,0,8,0)|0,wn=WEAPONS[w]?WEAPONS[w].name:'';
+  var w=mpNum(d.w,0,9,0)|0,wn=WEAPONS[w]?WEAPONS[w].name:'';
   mpFeed(kn+'  ['+wn+(d.h?' ★':'')+']  '+vn,d.by===MP.myPeer||m.peer===MP.myPeer);
   if(d.by===MP.myPeer&&MP.myPeer){
     var now=performance.now();if(MP.killAt[m.peer]&&now-MP.killAt[m.peer]<2500)return;MP.killAt[m.peer]=now;
@@ -3975,7 +4035,7 @@ function mpDie(){
 function mpLoadout(){
   coins=MPCOINS;cur=4;P.swapT=0;
   clearRockets();
-  for(var i=0;i<9;i++){wm_[i]=own[i]&&!WEAPONS[i].melee?WEAPONS[i].mag:0;wr_[i]=own[i]?Math.min(MPRES[i],WEAPONS[i].maxRes||MPRES[i]):0;}
+  for(var i=0;i<10;i++){wm_[i]=own[i]&&!WEAPONS[i].melee?WEAPONS[i].mag:0;wr_[i]=own[i]?Math.min(MPRES[i],WEAPONS[i].maxRes||MPRES[i]):0;}
   GROUPS.forEach(function(g,i){g.visible=i===cur;});$('h-wname').textContent=WEAPONS[cur].name;refreshSlots();
 }
 function mpSpawn(){
@@ -3993,7 +4053,7 @@ function mpSpawn(){
   MP.prot=2.5;MP.sendT=0;
 }
 function mpRespawn(){
-  grClear();for(var i=0;i<9;i++){if(own[i]&&!WEAPONS[i].melee){wm_[i]=WEAPONS[i].mag;wr_[i]=Math.min(MPRES[i],WEAPONS[i].maxRes||MPRES[i]);}}
+  grClear();for(var i=0;i<10;i++){if(own[i]&&!WEAPONS[i].melee){wm_[i]=WEAPONS[i].mag;wr_[i]=Math.min(MPRES[i],WEAPONS[i].maxRes||MPRES[i]);}}
   mpSpawn();MP.alive=true;MP.lastAtk='';$('mpdead').hidden=true;
   P.swapT=.3;latch=true;firing=false;
 }
@@ -4211,7 +4271,7 @@ function mpLeave(){
 function envNew(){var seed=null;if(MP.on&&MP.code){var hh=2166136261,q;for(q=0;q<MP.code.length;q++)hh=Math.imul(hh^MP.code.charCodeAt(q),16777619);seed=hh>>>0;}envStart(seed);}
 function newGame(){slotFree=false;$('pcw').classList.remove('free');envNew();
   P.x=P.px=start.x;P.z=P.pz=start.z;P.y=P.py=0;P.vx=P.vz=P.vy=0;P.hp=100;P.yaw=0;P.pitch=0;P.reloading=false;P.swapT=0;P.fireCd=0;P.bloom=0;P.recoil=0;P.hurt=0;P.ads=0;
-  resetEconomy();wm_=[30,7,125,5,0,0,1,0,0];wr_=[150,35,250,20,0,0,1,0,0];knS.t=-1;cur=4;GROUPS.forEach(function(g,i){g.visible=i===4;});$('h-wname').textContent=WEAPONS[4].name;refreshSlots();
+  resetEconomy();wm_=[30,7,125,5,0,0,1,0,0,7];wr_=[150,35,250,20,0,0,1,0,0,35];knS.t=-1;cur=4;GROUPS.forEach(function(g,i){g.visible=i===4;});$('h-wname').textContent=WEAPONS[4].name;refreshSlots();
   stats=freshStats();score=0;combo=0;comboT=0;
   enemies.forEach(function(e){e.active=false;e.dying=false;e.g.visible=false;});
   pickups.forEach(function(p){p.active=false;p.m.visible=false;});
@@ -4895,7 +4955,7 @@ function setSlotFree(v){
   if(slotFree){firing=false;adsHeld=false;try{if(document.pointerLockElement)document.exitPointerLock();}catch(e){}toast('무기 칸을 클릭하세요 (Tab 또는 화면 클릭: 복귀)',1600);}
   else lockPointer();
 }
-for(var pwi=0;pwi<9;pwi++)(function(i){$('pw'+i).addEventListener('click',function(){if(!slotFree)return;switchWeapon(i);setSlotFree(false);});})(pwi);
+for(var pwi=0;pwi<10;pwi++)(function(i){$('pw'+i).addEventListener('click',function(){if(!slotFree)return;switchWeapon(i);setSlotFree(false);});})(pwi);
 var GAMEKEYS={Tab:1,Digit3:1,KeyW:1,KeyA:1,KeyS:1,KeyD:1,Space:1,ShiftLeft:1,ShiftRight:1,ArrowUp:1,ArrowDown:1,ArrowLeft:1,ArrowRight:1,KeyR:1,Digit1:1,Digit2:1,Digit4:1,Digit5:1,Digit6:1,Digit7:1,Digit8:1,Digit9:1,Digit0:1};
 window.addEventListener('keydown',function(e){
   if(state==='playing'){
@@ -5018,7 +5078,7 @@ weatherInit();mountainInit();forestInit();if(TREESITE){treeSetup(TREESITE.cx,TRE
 
 /* ---------- dropped weapons ---------- */
 var DROPS=[],dropSeq=0,dropNear=null,dropBtnTxt='';
-var DLEN=[.9,1,1.1,1.2,.3,.3,1.1,.9,.2],mDropBeam=new THREE.MeshBasicMaterial({color:0x5ee9ff,transparent:true,opacity:.22,depthWrite:false,blending:THREE.AdditiveBlending}),mDropRing=new THREE.MeshBasicMaterial({color:0x5ee9ff,transparent:true,opacity:.7,side:THREE.DoubleSide,depthWrite:false});
+var DLEN=[.9,1,1.1,1.2,.3,.3,1.1,.9,.2,.38],mDropBeam=new THREE.MeshBasicMaterial({color:0x5ee9ff,transparent:true,opacity:.22,depthWrite:false,blending:THREE.AdditiveBlending}),mDropRing=new THREE.MeshBasicMaterial({color:0x5ee9ff,transparent:true,opacity:.7,side:THREE.DoubleSide,depthWrite:false});
 function dropMake(id,w,x,y,z,wm,wr){
   var g=new THREE.Group(),L=DLEN[w]||.8;
   part(g,mBlk,L,.07,.1,0,.1,0);part(g,mBlk2,.12,.14,.07,-L*.1,.02,0);part(g,mAlu,L*.35,.04,.06,L*.4,.13,0);part(g,mSteel,L*.3,.025,.025,-L*.55,.1,0);
@@ -5036,7 +5096,7 @@ function dropSpawn(w,x,z,wm,wr){
 }
 function mpOnDrop(m){
   if(m.isMe||!MP.on)return;var d=m.data;if(!d||typeof d.id!=='string'||d.id.length>60)return;
-  var w=mpNum(d.w,0,7,-1)|0;if(w<0||w===4||!WEAPONS[w])return;
+  var w=mpNum(d.w,0,9,-1)|0;if(w<0||w===4||w===8||!WEAPONS[w])return;
   for(var i=0;i<DROPS.length;i++)if(DROPS[i].id===d.id)return;
   if(DROPS.length>40)dropRemove(DROPS[0].id);
   dropMake(d.id,w,mpNum(d.x,-50,200,0),mpNum(d.y,-5,30,0),mpNum(d.z,-50,200,0),mpNum(d.m,0,500,0)|0,mpNum(d.r,0,999,0)|0);
@@ -5139,7 +5199,7 @@ function renderShop(){
   if(!own[i])srow(list,BASE[i].name+' 구매',cfull?'휴대 가득 ('+cnt+') · 다른 무기를 버리면 구매할 수 있습니다':statLine(WEAPONS[i])+(i===8?' · 별도 슬롯 (휴대 제한 제외)':' · 휴대 '+cnt),cfull?'휴대 가득':'◆ '+WPRICE[i],function(){buyWeapon(i);},cfull||coins<WPRICE[i]);
   else{srow(list,'현재 성능',statLine(WEAPONS[i])+(i===8?'':' · 휴대 '+cnt),'보유중',null,true,'owned');if(i!==8)srow(list,'무기 버리기','이 무기를 내려놓습니다 (환불 없음)','버리기',function(){dropWeapon(i);},false);}
   if(i===8&&own[8]){var gt=wm_[8]+wr_[8];srow(list,'수류탄 보충','1개 추가 · 보유 '+gt+'/'+GRN.max,gt>=GRN.max?'최대 보유':'◆ '+WPRICE[8],function(){if(coins<WPRICE[8]||wm_[8]+wr_[8]>=GRN.max)return;coins-=WPRICE[8];if(wm_[8]<1&&!GRS.cook)wm_[8]=1;else wr_[8]++;sfx('pick');renderShop();},gt>=GRN.max||coins<WPRICE[8]);}
-  if(i<6){
+  if(i<6||i===9){
   sec(list,'조준기');
   SOPT.forEach(function(o){
     var cur_=sightSel[i]===o.id,owned=o.id==='iron'||sightOwn[i][o.id];
@@ -5150,14 +5210,14 @@ function renderShop(){
   sec(list,'부착물');
   ATT.forEach(function(a){
     var c=priceOf(i,a);
-    if(have[i][a.id])srow(list,a.name,(i===5&&a.id==='mag')?'100발 드럼 탄창 (기본 33발)':a.desc,'장착됨',null,true,'owned');
-    else srow(list,a.name,own[i]?((i===5&&a.id==='mag')?'100발 드럼 탄창 (기본 33발)':a.desc):'총기를 먼저 구매하세요',own[i]?'◆ '+c:'잠김',function(){buyAtt(i,a);},!own[i]||coins<c);
+    if(have[i][a.id])srow(list,a.name,(i===5&&a.id==='mag')?'100발 드럼 탄창 (기본 33발)':((i===9&&a.id==='mag')?'17발 확장 탄창 (기본 7발)':a.desc),'장착됨',null,true,'owned');
+    else srow(list,a.name,own[i]?((i===5&&a.id==='mag')?'100발 드럼 탄창 (기본 33발)':((i===9&&a.id==='mag')?'17발 확장 탄창 (기본 7발)':a.desc)):'총기를 먼저 구매하세요',own[i]?'◆ '+c:'잠김',function(){buyAtt(i,a);},!own[i]||coins<c);
   });
   }
   sec(list,'보급');
-  var full=true;for(var k=0;k<6;k++)if(own[k]&&wr_[k]<WEAPONS[k].maxRes)full=false;if(own[6]&&wm_[6]+wr_[6]<RMAX)full=false;if(own[7]&&wr_[7]<WEAPONS[7].maxRes)full=false;if(own[8]&&wm_[8]+wr_[8]<GRN.max)full=false;
+  var full=true;for(var k=0;k<6;k++)if(own[k]&&wr_[k]<WEAPONS[k].maxRes)full=false;if(own[9]&&wr_[9]<WEAPONS[9].maxRes)full=false;if(own[6]&&wm_[6]+wr_[6]<RMAX)full=false;if(own[7]&&wr_[7]<WEAPONS[7].maxRes)full=false;if(own[8]&&wm_[8]+wr_[8]<GRN.max)full=false;
   srow(list,'탄약 보급','보유한 무기의 예비 탄약을 채웁니다',full?'가득 참':'◆ '+AMMOP,function(){
-    if(coins<AMMOP)return;coins-=AMMOP;for(var k=0;k<6;k++)if(own[k])wr_[k]=WEAPONS[k].maxRes;if(own[6])wr_[6]=Math.max(wr_[6],RMAX-wm_[6]);if(own[7])wr_[7]=WEAPONS[7].maxRes;if(own[8])wr_[8]=Math.max(wr_[8],GRN.max-wm_[8]);sfx('pick');renderShop();
+    if(coins<AMMOP)return;coins-=AMMOP;for(var k=0;k<6;k++)if(own[k])wr_[k]=WEAPONS[k].maxRes;if(own[9])wr_[9]=WEAPONS[9].maxRes;if(own[6])wr_[6]=Math.max(wr_[6],RMAX-wm_[6]);if(own[7])wr_[7]=WEAPONS[7].maxRes;if(own[8])wr_[8]=Math.max(wr_[8],GRN.max-wm_[8]);sfx('pick');renderShop();
   },full||coins<AMMOP);
   srow(list,'유도 미사일','지도에서 지점 선택 ('+(touchMode?'MSL 버튼':'G')+') · 반경 30m 전멸 · 보유 '+MSL.n+'/3',MSL.n>=3?'최대 보유':'◆ 3000',function(){
     if(coins<3000||MSL.n>=3)return;coins-=3000;MSL.n++;sfx('pick');refreshSlots();renderShop();
@@ -5186,14 +5246,14 @@ function resetTouch(){
   joyRelease();joy.jump=false;lookPtr.id=null;adsHeld=false;firing=false;latch=false;fireN=0;
   var on=document.querySelectorAll('#tc .tb.on');for(var i=0;i<on.length;i++)on[i].classList.remove('on');
 }
-var SN_TB=['HK416','M1014','PKM','AWM','KNIFE','G18','RPG-7','MORTAR','GRENADE'],SN_PW=SN_TB;
+var SN_TB=['HK416','M1014','PKM','AWM','KNIFE','G18','RPG-7','MORTAR','GRENADE','DEAGLE'],SN_PW=SN_TB;
 function slotNo(j){return j===4?0:(j===8?9:ord.indexOf(j)+1);}
-function refreshSlots(){for(var jn=0;jn<9;jn++){var no=slotNo(jn),b1=$('tb-w'+jn),b2=$('pw'+jn);if(b1){b1.innerHTML=no+'<small>'+SN_TB[jn]+'</small>';b1.style.order=(jn===8?90:no);}if(b2){b2.innerHTML=no+'<small>'+SN_PW[jn]+'</small>';b2.style.order=(jn===8?90:no);}}
+function refreshSlots(){for(var jn=0;jn<10;jn++){var no=slotNo(jn),b1=$('tb-w'+jn),b2=$('pw'+jn);if(b1){b1.innerHTML=no+'<small>'+SN_TB[jn]+'</small>';b1.style.order=(jn===8?90:no);}if(b2){b2.innerHTML=no+'<small>'+SN_PW[jn]+'</small>';b2.style.order=(jn===8?90:no);}}
   var tdp=$('tb-dep');if(tdp){tdp.style.order=97;tdp.style.display=cur===7?'':'none';}
   var tml=$('tb-msl');if(tml){tml.style.order=98;tml.style.display=(typeof MSL!=='undefined'&&MSL.n>0)?'':'none';}
   var tsh=$('tb-shop'),tps=$('tb-pause');if(tsh)tsh.style.order=99;if(tps)tps.style.order=99;
   var pem=document.querySelector?document.querySelector('#pcw em'):null;if(pem)pem.style.order=99;
-  for(var j=0;j<9;j++){var pb=$('pw'+j);if(pb){pb.classList.toggle('cur',j===cur);pb.classList.toggle('lock',!own[j]);}}for(var j2=0;j2<9;j2++){var pq=$('pw'+j2);if(pq)pq.style.display=own[j2]?'':'none';}for(var i=0;i<9;i++){var b=$('tb-w'+i);b.classList.toggle('cur',i===cur);b.classList.toggle('lock',!own[i]);b.style.display=own[i]?'':'none';}}
+  for(var j=0;j<10;j++){var pb=$('pw'+j);if(pb){pb.classList.toggle('cur',j===cur);pb.classList.toggle('lock',!own[j]);}}for(var j2=0;j2<10;j2++){var pq=$('pw'+j2);if(pq)pq.style.display=own[j2]?'':'none';}for(var i=0;i<10;i++){var b=$('tb-w'+i);b.classList.toggle('cur',i===cur);b.classList.toggle('lock',!own[i]);b.style.display=own[i]?'':'none';}}
 pad.addEventListener('pointerdown',function(e){
   if(state!=='playing')return;
   e.preventDefault();
@@ -5389,8 +5449,9 @@ function visual(dt,alpha){
     else if(cur===1){var sa=shotAnim(P.reloading?P.reloadT:-1);dip=sa.dip;tilt=sa.tilt;rz=sa.rz;ry=sa.ry;rollK=0;}
     else if(cur===4){knifePose();}
     else if(cur===5){var ga=glockAnim(rpn);dip=ga.dip;tilt=ga.tilt;rz=ga.rz;ry=ga.ry;rollK=0;}
+    else if(cur===9){var da=deAnim(rpn);dip=da.dip;tilt=da.tilt;rz=da.rz;ry=da.ry;rollK=0;}
     else if(P.reloading){dip=Math.sin(rpn*Math.PI)*.14;tilt=Math.sin(rpn*Math.PI)*.7;}
-    if(P.swapT>0){var sp=P.swapT/[.32,.32,.5,.55,.3,.3,.7,.45,.35][cur];dip+=Math.sin(sp*Math.PI*.5)*.2;}
+    if(P.swapT>0){var sp=P.swapT/[.32,.32,.5,.55,.3,.3,.7,.45,.35,.34][cur];dip+=Math.sin(sp*Math.PI*.5)*.2;}
     var wv=WEAPONS[cur],spr=P.sprinting?1:0,ad=P.ads;
     var ax=VM_POS.x*(1-ad)+Math.cos(P.bob)*.012*bobSm*(1-ad)-P.sway[0]*.6*(1-ad*.8);
     var ay=VM_POS.y+(-wv.dotY-VM_POS.y)*ad-by*.35*(1-ad)-dip-P.sway[1]*.5*(1-ad*.8)-spr*.05;
