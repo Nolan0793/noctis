@@ -378,7 +378,7 @@ body{background:var(--bg);color:var(--fg);font-family:var(--display);overflow:hi
               <option value="high">높음 (그림자·블룸)</option>
               <option value="mid">중간 (블룸·색보정)</option>
               <option value="off">끔</option>
-              <option value="min">최소 (저사양 PC · 구름/그림자/후처리 모두 끔, 60fps 목표)</option>
+              <option value="min">최소 (저사양 기기용)</option>
             </select>
           </label>
           <button class="chip" id="btn-envp" type="button">🌤 환경 설정 (계절·시간·날씨) 열기</button>
@@ -837,7 +837,7 @@ buildFlow(start.x,start.z);
 
 /* ---------- renderer / scenes ---------- */
 var stage=$('stage');
-var renderer=new THREE.WebGLRenderer({antialias:!COARSE,powerPreference:'high-performance'});
+var renderer=new THREE.WebGLRenderer({antialias:!COARSE&&settings.gfx!=='min',powerPreference:'high-performance'});
 renderer.autoClear=false;renderer.setClearColor(0x1b1b1c,1);
 renderer.domElement.className='gl';
 stage.insertBefore(renderer.domElement,stage.firstChild);
@@ -848,7 +848,7 @@ var wScene=new THREE.Scene(), wCam=new THREE.PerspectiveCamera(52,1,0.01,10);
 var vw=2,vh=2,ratio=1,ratioMax=1;
 function applyQuality(){
   var dpr=window.devicePixelRatio||1,q=settings.quality;
-  if(GX.low&&q==='auto'){ratioMax=.6;ratio=.5;}
+  if(GX.low&&q==='auto'){ratioMax=.6;ratio=.4;}
   else if(q==='perf'){ratioMax=0.6;ratio=0.6;}
   else if(q==='bal'){ratioMax=1;ratio=1;}
   else if(q==='hi'){ratioMax=Math.min(dpr,touchMode?1.5:2);ratio=ratioMax;}
@@ -1190,6 +1190,15 @@ function gfxLight(){
   moon.target.position.set(tx,ty,tz);moon.position.set(tx+d.x*90,ty+d.y*90,tz+d.z*90);
   moon.target.updateMatrixWorld();
 }
+function gfxLowApply(){
+  /* low-end preset: no point lights (cheaper lighting shader), thin grass, no distant forest/rocks */
+  var low=!!GX.low;
+  if(flare)flare.visible=!low;if(typeof lamp!=='undefined'&&lamp)lamp.visible=!low;
+  if(typeof OUT!=='undefined'&&OUT&&OUT.pl)OUT.pl.visible=!low;
+  if(GRASS_IM){if(!GRASS_IM.userData.full)GRASS_IM.userData.full=GRASS_IM.count;GRASS_IM.count=low?Math.floor(GRASS_IM.userData.full/4):GRASS_IM.userData.full;}
+  if(typeof FOR!=='undefined'&&FOR){if(FOR.con)FOR.con.visible=!low;if(FOR.dec)FOR.dec.visible=!low;}
+  if(typeof MT!=='undefined'&&MT&&MT.mesh)MT.mesh.visible=!low;
+}
 function gfxLevel(){
   var s=settings.gfx||'auto';
   if(s==='off'||s==='min')return 0;if(s==='mid')return 1;if(s==='high')return 2;if(s==='ultra')return 3;
@@ -1200,7 +1209,7 @@ function applyGfx(){
   GX.level=lv;GX.ultra=lv>=3;flashL.visible=lv>=1;
   var low=(settings.gfx==='min');GX.low=low;STEP=low?1/60:1/90;
   if(typeof skyMat!=='undefined'&&skyMat&&skyMat.uniforms)skyMat.uniforms.uLow.value=low?1:0;
-  if(flare)flare.visible=!low;camera.far=low?240:700;camera.updateProjectionMatrix();
+  camera.far=low?200:700;camera.updateProjectionMatrix();gfxLowApply();
   if(wantShadow!==GX.shadow){
     GX.shadow=wantShadow;renderer.shadowMap.enabled=wantShadow;renderer.shadowMap.type=THREE.PCFSoftShadowMap;
     moon.castShadow=wantShadow;
@@ -2655,7 +2664,7 @@ if(OUT.on){(function(){
   part(it,gm1,.06,.22,.09,0,-.27,.19);part(it,mGlow,.062,.03,.092,0,-.38,.19);
   it.scale.set(1.5,1.5,1.5);
   var gl=new THREE.Sprite(new THREE.SpriteMaterial({map:glowTex,color:0xffa640,blending:THREE.AdditiveBlending,transparent:true,depthWrite:false}));gl.scale.set(2.2,2.2,1);it.add(gl);
-  var pl=new THREE.PointLight(0xffa640,.9,9,2);pl.position.set(OUT.ix,1.8,OUT.iz);scene.add(pl);
+  var pl=new THREE.PointLight(0xffa640,.9,9,2);pl.position.set(OUT.ix,1.8,OUT.iz);scene.add(pl);OUT.pl=pl;gfxLowApply();
   OUT.item=it;
   var cg=new THREE.Group(),mc=new THREE.MeshPhongMaterial({color:0x4a5058,shininess:40,specular:0x889099}),hs=1.05,bi,bt;
   for(bi=-3;bi<=3;bi++){bt=bi*hs/3;
@@ -4313,7 +4322,7 @@ function updateHUD(dt){
   $('cross').style.setProperty('--gap',Math.min(130,gap).toFixed(1)+'px');
   $('cross').classList.toggle('ads',P.ads>.5);
   setT('h-mslpc',MSL.n>0?'[G] 미사일 ×'+MSL.n:'');
-  mmT-=dt;if(mmT<=0){drawMinimap();mmT=.06;}
+  mmT-=dt;if(mmT<=0){drawMinimap();mmT=GX.low?.25:.06;}
 }
 
 /* ---------- mortar trajectory preview ---------- */
@@ -4990,7 +4999,7 @@ bindSettings();bindEnv();updateBestLine();
   c.addEventListener('change',function(){touchMode=c.checked;settings.touch=touchMode;saveJSON('hollow-settings',settings);stage.classList.toggle('touch',touchMode);resetTouch();applyGfx();applyQuality();});
 })();
 applyGfx();applyQuality();
-weatherInit();mountainInit();forestInit();if(TREESITE){treeSetup(TREESITE.cx,TREESITE.cz);pondInit();fishInit();}if(GX.shadow)gfxFlagShadows(scene);envStart(null);
+weatherInit();mountainInit();forestInit();if(TREESITE){treeSetup(TREESITE.cx,TREESITE.cz);pondInit();fishInit();}if(GX.shadow)gfxFlagShadows(scene);gfxLowApply();envStart(null);
 
 /* ---------- dropped weapons ---------- */
 var DROPS=[],dropSeq=0,dropNear=null,dropBtnTxt='';
