@@ -484,7 +484,7 @@ if(!THREE){$('menu-err').hidden=false;return;}
 /* ---------- persistence ---------- */
 function loadJSON(k){try{return JSON.parse(localStorage.getItem(k))||{};}catch(e){return {};}}
 function saveJSON(k,v){try{localStorage.setItem(k,JSON.stringify(v));}catch(e){}}
-var settings=Object.assign({sens:1,ads:1,fov:80,quality:'auto',gfx:'auto',eSeason:'auto',eTime:'auto',eHour:12,eWeather:'auto',eMoon:'auto',eSpeed:'norm',eSound:true,eCloud:'auto',eCAmt:'norm'},loadJSON('hollow-settings'));
+var settings=Object.assign({sens:1,ads:1,fov:80,quality:'auto',gfx:'min',eSeason:'auto',eTime:'auto',eHour:12,eWeather:'auto',eMoon:'auto',eSpeed:'norm',eSound:true,eCloud:'auto',eCAmt:'norm'},loadJSON('hollow-settings'));
 var best=Object.assign({score:0,wave:0},loadJSON('hollow-best'));
 var COARSE=!!(window.matchMedia&&matchMedia('(pointer:coarse)').matches);
 var touchMode=settings.touch===undefined?COARSE:!!settings.touch;
