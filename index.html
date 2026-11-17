@@ -3022,7 +3022,7 @@ function rebuild(i){
   if(h.grip){o.kick*=.7;o.bloomAdd*=.7;o.spread*=.9;}
   if(h.laser){o.hip*=.55;}
   if(h.supp){o.kick*=.88;o.nofl=true;}
-  if(i===9&&h.auto){o.auto=true;o.rate=.3;o.kick*=1.45;o.bloomAdd*=1.3;}
+  if(i===9&&h.auto){o.auto=true;o.rate=.3;o.kick*=2.6;o.bloomAdd*=1.9;o.wob=3.2;o.shake=.75;}
   var sg=sightSel[i]||'red';o.dotY=SIGHTBY[i]+SOFF[sg]*(((i===5||i===9)&&sg!=='iron')?.6:1);o.zoom=SZOOM[sg];o.scope=o.zoom>1;o.adsSens=SSENS[sg];
   WEAPONS[i]=o;
 }
