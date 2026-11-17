@@ -2694,6 +2694,10 @@ var DEK={g:[-.003,-.06,-.07],m:[0,-.16,.06],d:[0,-.28,.06],p:[-.12,-.34,.1]};
 var deHandR=mkHandV(deagle);deHandR.g.position.set(0,-.058,.05);deHandR.h.rotation.x=-.2;
 var deHandL=mkHandH(deagle);deHandL.position.set(DEK.g[0],DEK.g[1],DEK.g[2]);
 mkSights(9,deagle,.066,-.03,-.2,.6);
+/* full-auto kit: folding wire stock off the back of the grip */
+var deStock=new THREE.Group();deagle.add(deStock);deStock.visible=false;
+part(deStock,mBlk,.03,.03,.03,0,-.03,.09);part(deStock,mBlk2,.008,.008,.17,-.013,-.02,.19);part(deStock,mBlk2,.008,.008,.17,.013,-.02,.19);
+part(deStock,mBlk2,.008,.06,.008,-.013,-.045,.27);part(deStock,mBlk2,.008,.06,.008,.013,-.045,.27);part(deStock,mBlk,.034,.075,.018,0,-.05,.28);
 
 /* ===== the yard outside the boundary wall: stone walls, a pedestal with the G18 ===== */
 if(OUT.on){(function(){
@@ -2856,6 +2860,7 @@ attVis[3].mag={set visible(v){awMag.ext.visible=v;awMag2.ext.visible=v;}};
 attVis[2].mag={set visible(v){pkAmmoA.ext.visible=v;pkAmmoB.ext.visible=v;}};
 attVis[5].mag={set visible(v){[glMag,glMag2].forEach(function(m){m.ext.visible=v;m.stk.visible=!v;});}};
 attVis[9].mag={set visible(v){deMag.ext.visible=v;deMag2.ext.visible=v;}};
+attVis[9].auto={set visible(v){deStock.visible=v;}};
 function updateAttVis(){
   for(var si=0;si<10;si++)for(var sk in sightG[si])sightG[si][sk].visible=sightSel[si]===sk;
   for(var i=0;i<10;i++)for(var k in attVis[i])attVis[i][k].visible=!!(have[i]&&have[i][k]);
@@ -3017,6 +3022,7 @@ function rebuild(i){
   if(h.grip){o.kick*=.7;o.bloomAdd*=.7;o.spread*=.9;}
   if(h.laser){o.hip*=.55;}
   if(h.supp){o.kick*=.88;o.nofl=true;}
+  if(i===9&&h.auto){o.auto=true;o.rate=.3;o.kick*=1.45;o.bloomAdd*=1.3;}
   var sg=sightSel[i]||'red';o.dotY=SIGHTBY[i]+SOFF[sg]*(((i===5||i===9)&&sg!=='iron')?.6:1);o.zoom=SZOOM[sg];o.scope=o.zoom>1;o.adsSens=SSENS[sg];
   WEAPONS[i]=o;
 }
@@ -5177,8 +5183,9 @@ function buySight(i,o){
   if(!owned){if(coins<o.price)return;coins-=o.price;sightOwn[i][o.id]=1;}
   sightSel[i]=o.id;rebuild(i);updateAttVis();sfx('pick');renderShop();
 }
+var DE_AUTO={id:'auto',name:'자동연사 키트',desc:'자동 연사 (분당 200발), 개머리판 장착, 반동 증가',base:300};
 function buyAtt(i,a){
-  var c=priceOf(i,a);if(!own[i]||have[i][a.id]||coins<c)return;
+  var c=a.id==='auto'?a.base:priceOf(i,a);if(!own[i]||have[i][a.id]||coins<c)return;
   var oldMag=WEAPONS[i].mag;
   coins-=c;have[i][a.id]=true;rebuild(i);
   if(a.id==='mag')wm_[i]=Math.min(WEAPONS[i].mag,wm_[i]+(WEAPONS[i].mag-oldMag));
@@ -5208,8 +5215,8 @@ function renderShop(){
     else srow(list,o.id==='iron'?'조준기 제거':o.name,o.desc,o.id==='iron'?'무료 제거':(owned?'장착':'◆ '+o.price),function(){buySight(i,o);},!owned&&coins<o.price);
   });
   sec(list,'부착물');
-  ATT.forEach(function(a){
-    var c=priceOf(i,a);
+  (i===9?ATT.concat([DE_AUTO]):ATT).forEach(function(a){
+    var c=a.id==='auto'?a.base:priceOf(i,a);
     if(have[i][a.id])srow(list,a.name,(i===5&&a.id==='mag')?'100발 드럼 탄창 (기본 33발)':((i===9&&a.id==='mag')?'17발 확장 탄창 (기본 7발)':a.desc),'장착됨',null,true,'owned');
     else srow(list,a.name,own[i]?((i===5&&a.id==='mag')?'100발 드럼 탄창 (기본 33발)':((i===9&&a.id==='mag')?'17발 확장 탄창 (기본 7발)':a.desc)):'총기를 먼저 구매하세요',own[i]?'◆ '+c:'잠김',function(){buyAtt(i,a);},!own[i]||coins<c);
   });
