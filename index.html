@@ -4301,8 +4301,13 @@ function startGame(){
   audioInit();
   setTimeout(function(){if(AC&&AC.state!=='running'&&state==='playing')toast('소리가 꺼져 있습니다. 화면을 한 번 터치하고 기기 미디어 볼륨도 확인하세요',3800);},900);
   newGame();state='playing';fallback=false;resetTouch();showOnly(null);lockPointer();acc=0;
-  if(touchMode){try{var rf=stage.requestFullscreen||stage.webkitRequestFullscreen;if(rf){var pr=rf.call(stage);if(pr&&pr.catch)pr.catch(function(){});}}catch(e){}}
+  goFS();
 }
+/* mobile fullscreen: re-enter on resume or on the next tap whenever it was lost */
+function isFS(){return !!(document.fullscreenElement||document.webkitFullscreenElement);}
+function goFS(){if(!touchMode||isFS())return;try{var rf=stage.requestFullscreen||stage.webkitRequestFullscreen;if(rf){var pr=rf.call(stage);if(pr&&pr.catch)pr.catch(function(){});}}catch(e){}}
+['touchend','pointerup'].forEach(function(ev){stage.addEventListener(ev,function(){if(touchMode&&(state==='playing'||state==='paused'))goFS();},true);});
+['fullscreenchange','webkitfullscreenchange'].forEach(function(ev){document.addEventListener(ev,function(){if(touchMode&&!isFS()&&state==='playing')pause();});});
 function pause(){slotFree=false;$('pcw').classList.remove('free');
   if(state!=='playing')return;
   state='paused';K={};firing=false;adsHeld=false;resetTouch();showOnly('pause');$('hud').hidden=false;
@@ -4310,7 +4315,7 @@ function pause(){slotFree=false;$('pcw').classList.remove('free');
 }
 function resume(){
   if(state!=='paused')return;
-  audioInit();state='playing';showOnly(null);lockPointer();
+  audioInit();state='playing';showOnly(null);lockPointer();goFS();
 }
 function die(){
   state='dead';GRS.cook=false;sfx('dead');K={};firing=false;adsHeld=false;resetTouch();$('tc').hidden=true;
