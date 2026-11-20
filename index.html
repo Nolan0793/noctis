@@ -5393,28 +5393,31 @@ CTL.forEach(function(id){
 });
 $('btn-ctl').addEventListener('click',enterEdit);
 $('le-done').addEventListener('click',exitEdit);
-/* short preset code: N2-<per button 5 chars: x(2) y(2) size(1), '-----' hidden, '.....' default><opacity(1)><hold(1)>, base-36 */
+/* short preset code: N2-<per button: x(2) y(2) size(1); a leading '-' marks it hidden (position kept); '.....' default><opacity(1)><hold(1)>, base-36 */
 function b36(n,w){var t=Math.max(0,Math.round(n)).toString(36);while(t.length<w)t='0'+t;return t.slice(-w);}
 function ctlEncode(){
   var L=settings.layout||{},c='N2-';
   CTL.forEach(function(id){var e=L[id];
-    if(!e)c+='.....';else if(!e.v)c+='-----';
-    else c+=b36(Math.min(999,(+e.x)*1000),2)+b36(Math.min(999,(+e.y)*1000),2)+b36(((+(e.s||1))-.6)/.05,1);});
+    if(!e)c+='.....';
+    else c+=(e.v?'':'-')+b36(Math.min(999,(+e.x)*1000),2)+b36(Math.min(999,(+e.y)*1000),2)+b36(((+(e.s||1))-.6)/.05,1);});
   return c+b36(((+(settings.tbOp||1))-.3)/.05,1)+(settings.adsHold?'1':'0');
 }
 function ctlDecode(str){
   str=String(str||'').trim();
   if(/^N2-/i.test(str)){
-    var t=str.slice(3).toLowerCase();if(t.length<CTL.length*5+2||!/^[0-9a-z.\-]+$/.test(t))return null;
-    var L={};
-    for(var i=0;i<CTL.length;i++){var q=t.substr(i*5,5);
-      if(q==='.....')continue;
-      if(q==='-----'){L[CTL[i]]={x:.5,y:.5,s:1,v:0};continue;}
+    var t=str.slice(3).toLowerCase();if(!/^[0-9a-z.\-]+$/.test(t))return null;
+    var L={},p=0;
+    for(var i=0;i<CTL.length;i++){
+      if(t.substr(p,5)==='.....'){p+=5;continue;}
+      if(t.substr(p,5)==='-----'){L[CTL[i]]={x:.5,y:.5,s:1,v:0};p+=5;continue;}
+      var vis=1;if(t.charAt(p)==='-'){vis=0;p++;}
+      var q=t.substr(p,5);p+=5;if(q.length<5)return null;
       var x=parseInt(q.substr(0,2),36)/1000,y=parseInt(q.substr(2,2),36)/1000,sz=.6+parseInt(q.substr(4,1),36)*.05;
       if(!isFinite(x)||!isFinite(y)||!isFinite(sz))return null;
-      L[CTL[i]]={x:Math.max(.03,Math.min(.97,x)),y:Math.max(.04,Math.min(.96,y)),s:Math.max(.6,Math.min(1.8,sz)),v:1};}
-    var op=.3+parseInt(t.charAt(CTL.length*5),36)*.05;
-    return {l:L,o:Math.max(.3,Math.min(1,isFinite(op)?op:1)),h:t.charAt(CTL.length*5+1)==='1'};
+      L[CTL[i]]={x:Math.max(.03,Math.min(.97,x)),y:Math.max(.04,Math.min(.96,y)),s:Math.max(.6,Math.min(1.8,sz)),v:vis};}
+    if(t.length<p+2)return null;
+    var op=.3+parseInt(t.charAt(p),36)*.05;
+    return {l:L,o:Math.max(.3,Math.min(1,isFinite(op)?op:1)),h:t.charAt(p+1)==='1'};
   }
   if(str.indexOf('NCT1-')!==0)return null;
   var b=str.slice(5).replace(/-/g,'+').replace(/_/g,'/');while(b.length%4)b+='=';
