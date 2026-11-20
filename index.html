@@ -5331,6 +5331,9 @@ bindBtn('tb-shop',{toggle:true,down:function(){openShop();}});
 /* ---------- touch layout editor (4-finger claw etc.) ---------- */
 var CTL=['tb-fire','tb-fire2','tb-ads','tb-jump','tb-rel','tb-slots'];
 var CTLN={'tb-fire':'발사','tb-fire2':'발사 2 (왼쪽)','tb-ads':'조준','tb-jump':'점프','tb-rel':'장전','tb-slots':'무기·상점·메뉴 줄'};
+/* default touch layout (from preset code NCT1-eyJsIjp7InRiLWZpcmUi...) */
+var DEFLAY={'tb-fire':{x:.811,y:.699,s:.65,v:1},'tb-fire2':{x:.249,y:.241,s:1.45,v:1},'tb-ads':{x:.777,y:.24,s:1.65,v:1},'tb-jump':{x:.888,y:.522,s:.8,v:1},'tb-rel':{x:.738,y:.757,s:1,v:1},'tb-slots':{x:.521,y:.94,s:1,v:1}};
+if(!settings.layout)settings.layout=JSON.parse(JSON.stringify(DEFLAY));
 var CLAW={'tb-fire':{x:.93,y:.27,s:1.1,v:1},'tb-fire2':{x:.07,y:.47,s:1,v:1},'tb-ads':{x:.07,y:.27,s:1,v:1},'tb-jump':{x:.93,y:.47,s:1,v:1},'tb-rel':{x:.82,y:.27,s:1,v:1}};
 var ED={sel:null,drag:null};
 function layoutApply(){
@@ -5425,7 +5428,7 @@ $('le-size').addEventListener('input',function(){if(!ED.sel)return;edEntry(ED.se
 $('le-vis').addEventListener('change',function(){if(!ED.sel)return;edEntry(ED.sel,false).v=$('le-vis').checked?1:0;layoutApply();layoutSave();});
 $('le-op').addEventListener('input',function(){settings.tbOp=parseFloat($('le-op').value);layoutApply();layoutSave();});
 $('le-hold').addEventListener('change',function(){settings.adsHold=$('le-hold').checked;layoutSave();});
-$('le-def').addEventListener('click',function(){settings.layout={};settings.adsHold=false;$('le-hold').checked=false;layoutApply();edSel(null);layoutSave();});
+$('le-def').addEventListener('click',function(){settings.layout=JSON.parse(JSON.stringify(DEFLAY));settings.adsHold=false;$('le-hold').checked=false;layoutApply();edSel(null);layoutSave();});
 $('le-claw').addEventListener('click',function(){settings.layout=JSON.parse(JSON.stringify(CLAW));settings.adsHold=true;$('le-hold').checked=true;layoutApply();edSel(null);layoutSave();});
 layoutApply();
 
