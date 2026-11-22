@@ -5037,6 +5037,26 @@ function exitToMenu(){
 }
 $('btn-resume').addEventListener('click',resume);
 document.addEventListener('touchstart',function(){},{passive:true});   /* lets :active fire on iOS taps */
+/* menu/shop/settings buttons fire the moment they are touched, like the in-game controls.
+   Buttons inside a scrolling list (shop) fire on release instead, and only if the finger did not move, so scrolling never buys anything. */
+var TAP={skip:null,t:0,pend:null};
+function tapScroller(b){for(var n=b.parentElement;n&&n!==document.body;n=n.parentElement){var cs=getComputedStyle(n);if(/(auto|scroll)/.test(cs.overflowY+cs.overflowX)&&(n.scrollHeight>n.clientHeight+2||n.scrollWidth>n.clientWidth+2))return true;}return false;}
+function tapFire(b){TAP.skip=b;TAP.t=performance.now();b.__tap=true;try{b.click();}finally{b.__tap=false;}}
+document.addEventListener('pointerdown',function(e){
+  if(e.button>0)return;var b=e.target&&e.target.closest&&e.target.closest('button');
+  if(!b||b.disabled||b.classList.contains('tb')||b.id==='pickbtn')return;
+  if(tapScroller(b)){TAP.pend={b:b,x:e.clientX,y:e.clientY,id:e.pointerId};return;}
+  tapFire(b);
+},true);
+document.addEventListener('pointerup',function(e){
+  var q=TAP.pend;TAP.pend=null;if(!q||q.id!==e.pointerId||q.b.disabled)return;
+  if(Math.hypot(e.clientX-q.x,e.clientY-q.y)<12)tapFire(q.b);
+},true);
+document.addEventListener('pointercancel',function(){TAP.pend=null;},true);
+document.addEventListener('click',function(e){
+  var b=e.target&&e.target.closest&&e.target.closest('button');
+  if(b&&!b.__tap&&b===TAP.skip&&performance.now()-TAP.t<900){e.preventDefault();e.stopPropagation();}
+},true);
 /* ---------- developer mode ---------- */
 var DEVN=[['god','무적'],['ammo','무한 탄약'],['fly','날아다니기'],['money','무한 돈'],['unl','무제한 총기 휴대']];
 function devBadge(){
