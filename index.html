@@ -5080,7 +5080,7 @@ function bindSettings(){
   s.addEventListener('input',function(){settings.sens=parseFloat(s.value);$('o-sens').textContent=settings.sens.toFixed(2);saveJSON('hollow-settings',settings);});
   f.addEventListener('input',function(){settings.fov=parseInt(f.value,10);$('o-fov').textContent=settings.fov;saveJSON('hollow-settings',settings);});
   q.addEventListener('change',function(){settings.quality=q.value;saveJSON('hollow-settings',settings);applyQuality();});
-  var bl=$('s-blur');bl.checked=settings.blur!==false;document.body.classList.toggle('noblur',!bl.checked);bl.addEventListener('change',function(){settings.blur=bl.checked;document.body.classList.toggle('noblur',!bl.checked);saveJSON('hollow-settings',settings);});
+  var bl=$('s-blur');bl.checked=settings.blur!==false;$('stage').classList.toggle('noblur',!bl.checked);bl.addEventListener('change',function(){settings.blur=bl.checked;$('stage').classList.toggle('noblur',!bl.checked);saveJSON('hollow-settings',settings);});
   var gx=$('s-gfx');gx.value=settings.gfx||'auto';gx.addEventListener('change',function(){settings.gfx=gx.value;saveJSON('hollow-settings',settings);applyGfx();});
 }
 bindSettings();bindEnv();updateBestLine();
