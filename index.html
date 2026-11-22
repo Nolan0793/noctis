@@ -123,7 +123,7 @@ body{background:var(--bg);color:var(--fg);font-family:var(--display);overflow:hi
 .noblur .tb,.noblur #joy{-webkit-backdrop-filter:none;backdrop-filter:none}
 /* every other button: the same subtle press, no blur */
 button:not(.tb){transition:scale .22s cubic-bezier(.3,1.35,.5,1),background-color .15s,border-color .15s,color .15s}
-button:not(.tb):not(:disabled):active{scale:.95;transition:scale .06s ease-out}
+button:not(.tb):not(:disabled):active,button.pr:not(.tb){scale:.95;transition:scale .06s ease-out}
 /* invisible margin so a quick tap near the edge still lands after the button shrinks */
 button:not(.tb):not(#pickbtn){position:relative}
 button:not(.tb)::after{content:'';position:absolute;inset:-7%;border-radius:inherit}
@@ -5037,26 +5037,16 @@ function exitToMenu(){
 }
 $('btn-resume').addEventListener('click',resume);
 document.addEventListener('touchstart',function(){},{passive:true});   /* lets :active fire on iOS taps */
-/* menu/shop/settings buttons fire the moment they are touched, like the in-game controls.
-   Buttons inside a scrolling list (shop) fire on release instead, and only if the finger did not move, so scrolling never buys anything. */
-var TAP={skip:null,t:0,pend:null};
+/* press feedback: every button shrinks the instant it is touched (CSS :active is delayed on mobile);
+   the action itself still runs on release (normal click). Shop rows are the exception: they scroll, so they keep plain :active. */
 function tapScroller(b){for(var n=b.parentElement;n&&n!==document.body;n=n.parentElement){var cs=getComputedStyle(n);if(/(auto|scroll)/.test(cs.overflowY+cs.overflowX)&&(n.scrollHeight>n.clientHeight+2||n.scrollWidth>n.clientWidth+2))return true;}return false;}
-function tapFire(b){TAP.skip=b;TAP.t=performance.now();b.__tap=true;try{b.click();}finally{b.__tap=false;}}
+var PRB=null;
 document.addEventListener('pointerdown',function(e){
-  if(e.button>0)return;var b=e.target&&e.target.closest&&e.target.closest('button');
-  if(!b||b.disabled||b.classList.contains('tb')||b.id==='pickbtn')return;
-  if(tapScroller(b)){TAP.pend={b:b,x:e.clientX,y:e.clientY,id:e.pointerId};return;}
-  tapFire(b);
-},true);
-document.addEventListener('pointerup',function(e){
-  var q=TAP.pend;TAP.pend=null;if(!q||q.id!==e.pointerId||q.b.disabled)return;
-  if(Math.hypot(e.clientX-q.x,e.clientY-q.y)<12)tapFire(q.b);
-},true);
-document.addEventListener('pointercancel',function(){TAP.pend=null;},true);
-document.addEventListener('click',function(e){
   var b=e.target&&e.target.closest&&e.target.closest('button');
-  if(b&&!b.__tap&&b===TAP.skip&&performance.now()-TAP.t<900){e.preventDefault();e.stopPropagation();}
+  if(!b||b.disabled||b.classList.contains('tb')||b.closest('#shop')||tapScroller(b))return;
+  if(PRB)PRB.classList.remove('pr');PRB=b;b.classList.add('pr');
 },true);
+['pointerup','pointercancel'].forEach(function(t){document.addEventListener(t,function(){if(PRB){var q=PRB;PRB=null;setTimeout(function(){q.classList.remove('pr');},60);}},true);});
 /* ---------- developer mode ---------- */
 var DEVN=[['god','무적'],['ammo','무한 탄약'],['fly','날아다니기'],['money','무한 돈'],['unl','무제한 총기 휴대']];
 function devBadge(){
@@ -5356,8 +5346,9 @@ bindBtn('tb-w8',{toggle:true,down:function(){switchWeapon(8);}});
 bindBtn('tb-w9',{toggle:true,down:function(){switchWeapon(9);}});
 bindBtn('tb-dep',{toggle:true,down:function(){mortToggle();}});
 bindBtn('tb-msl',{toggle:true,down:function(){openTgt();}});
-bindBtn('tb-pause',{toggle:true,down:function(){pause();}});
-bindBtn('tb-shop',{toggle:true,down:function(){openShop();}});
+bindBtn('tb-pause',{toggle:true,up:function(e,b){if(inBtn(e,b))pause();}});
+bindBtn('tb-shop',{toggle:true,up:function(e,b){if(inBtn(e,b))openShop();}});
+function inBtn(e,b){var r=b.getBoundingClientRect(),m=14;return e.type!=='pointercancel'&&e.clientX>=r.left-m&&e.clientX<=r.right+m&&e.clientY>=r.top-m&&e.clientY<=r.bottom+m;}
 
 /* ---------- touch layout editor (4-finger claw etc.) ---------- */
 var CTL=['tb-fire','tb-fire2','tb-ads','tb-jump','tb-rel','tb-slots'];
