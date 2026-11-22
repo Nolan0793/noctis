@@ -114,13 +114,13 @@ body{background:var(--bg);color:var(--fg);font-family:var(--display);overflow:hi
 #joy{position:absolute;width:120px;height:120px;border-radius:50%;border:1px solid rgba(255,255,255,.28);background:linear-gradient(150deg,rgba(255,255,255,.12),rgba(255,255,255,.03));-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px);box-shadow:inset 0 1px 1px rgba(255,255,255,.35),0 6px 18px rgba(0,0,0,.2);left:max(28px,env(safe-area-inset-left,0px));bottom:max(28px,env(safe-area-inset-bottom,0px));pointer-events:none;opacity:.55}
 #joy.act{opacity:1}
 #joyk{position:absolute;left:34px;top:34px;width:52px;height:52px;border-radius:50%;background:linear-gradient(150deg,rgba(200,240,255,.55),rgba(127,214,255,.25));border:1px solid rgba(220,245,255,.75);box-shadow:inset 0 1px 1px rgba(255,255,255,.6),0 4px 12px rgba(0,0,0,.25)}
-.tb{position:absolute;appearance:none;border-radius:50%;border:1px solid rgba(255,255,255,.34);background:linear-gradient(150deg,rgba(255,255,255,.2),rgba(255,255,255,.04) 55%,rgba(255,255,255,.1));-webkit-backdrop-filter:blur(8px) saturate(1.6);backdrop-filter:blur(8px) saturate(1.6);box-shadow:inset 0 1px 1px rgba(255,255,255,.5),inset 0 -8px 14px rgba(0,0,0,.14),0 6px 18px rgba(0,0,0,.28);text-shadow:0 1px 2px rgba(0,0,0,.45);transition:scale .5s cubic-bezier(.3,1.9,.45,1),background .18s,box-shadow .18s,border-color .18s;color:var(--fg);font:700 14px/1 var(--display);letter-spacing:.08em;touch-action:none;-webkit-tap-highlight-color:transparent;user-select:none;-webkit-user-select:none;padding:0;cursor:pointer}
+.tb{position:absolute;appearance:none;border-radius:50%;border:1px solid rgba(255,255,255,.34);background:linear-gradient(150deg,rgba(255,255,255,.2),rgba(255,255,255,.04) 55%,rgba(255,255,255,.1));-webkit-backdrop-filter:blur(8px) saturate(1.6);backdrop-filter:blur(8px) saturate(1.6);box-shadow:inset 0 1px 1px rgba(255,255,255,.5),inset 0 -8px 14px rgba(0,0,0,.14),0 6px 18px rgba(0,0,0,.28);text-shadow:0 1px 2px rgba(0,0,0,.45);transition:scale .22s cubic-bezier(.3,1.35,.5,1),background .18s,box-shadow .18s,border-color .18s;color:var(--fg);font:700 14px/1 var(--display);letter-spacing:.08em;touch-action:none;-webkit-tap-highlight-color:transparent;user-select:none;-webkit-user-select:none;padding:0;cursor:pointer}
 .tb.ic{display:grid;place-items:center}
 .tb.ic svg{width:56%;height:56%;display:block;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;pointer-events:none}
 .tb.ic svg .f{fill:currentColor;fill-opacity:.25}
 .tb.on,.tb.cur{background:linear-gradient(150deg,rgba(160,228,255,.55),rgba(127,214,255,.22));border-color:rgba(200,240,255,.8);color:#fff;box-shadow:inset 0 1px 1px rgba(255,255,255,.6),0 0 16px rgba(127,214,255,.45)}
-.tb.pr{scale:.84;transition:scale .07s ease-out,background .1s}
-.tb.slot.pr{scale:.88}
+.tb.pr{scale:.95;transition:scale .06s ease-out,background .1s}
+.noblur .tb,.noblur #joy{-webkit-backdrop-filter:none;backdrop-filter:none}
 .tb.fire{width:96px;height:96px;right:var(--sr);bottom:var(--sb);background:linear-gradient(150deg,rgba(255,170,120,.4),rgba(255,106,61,.14) 60%,rgba(255,138,61,.24));border-color:rgba(255,180,130,.6);font-size:16px}
 .tb.fire.on{background:linear-gradient(150deg,rgba(255,190,140,.7),rgba(255,120,61,.45));border-color:#ffc79a;box-shadow:inset 0 1px 1px rgba(255,255,255,.6),0 0 18px rgba(255,138,61,.55)}
 .tb.ads{width:64px;height:64px;right:calc(var(--sr) + 16px);bottom:calc(var(--sb) + 110px)}
@@ -384,6 +384,7 @@ body{background:var(--bg);color:var(--fg);font-family:var(--display);overflow:hi
               <option value="min">최소 (저사양 기기용)</option>
             </select>
           </label>
+          <label for="s-blur">버튼 블러 효과<input id="s-blur" type="checkbox" checked></label>
           <button class="chip" id="btn-envp" type="button">🌤 환경 설정 (계절·시간·날씨) 열기</button>
           <label for="s-touch">터치 조작 UI<input id="s-touch" type="checkbox"></label>
         </div>
@@ -5079,6 +5080,7 @@ function bindSettings(){
   s.addEventListener('input',function(){settings.sens=parseFloat(s.value);$('o-sens').textContent=settings.sens.toFixed(2);saveJSON('hollow-settings',settings);});
   f.addEventListener('input',function(){settings.fov=parseInt(f.value,10);$('o-fov').textContent=settings.fov;saveJSON('hollow-settings',settings);});
   q.addEventListener('change',function(){settings.quality=q.value;saveJSON('hollow-settings',settings);applyQuality();});
+  var bl=$('s-blur');bl.checked=settings.blur!==false;document.body.classList.toggle('noblur',!bl.checked);bl.addEventListener('change',function(){settings.blur=bl.checked;document.body.classList.toggle('noblur',!bl.checked);saveJSON('hollow-settings',settings);});
   var gx=$('s-gfx');gx.value=settings.gfx||'auto';gx.addEventListener('change',function(){settings.gfx=gx.value;saveJSON('hollow-settings',settings);applyGfx();});
 }
 bindSettings();bindEnv();updateBestLine();
