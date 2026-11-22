@@ -5364,8 +5364,8 @@ function layoutApply(){
     var el=$(id),e=L[id];
     if(e&&isFinite(e.x)&&isFinite(e.y)){
       el.style.left=(e.x*100)+'%';el.style.top=(e.y*100)+'%';el.style.right='auto';el.style.bottom='auto';
-      el.style.transform='translate(-50%,-50%) scale('+(e.s||1)+')';
-    }else{el.style.left=el.style.top=el.style.right=el.style.bottom=el.style.transform='';}
+      el.style.translate='-50% -50%';el.style.transform='scale('+(e.s||1)+')';   /* separate translate so the press-scale shrinks around the centre */
+    }else{el.style.left=el.style.top=el.style.right=el.style.bottom=el.style.transform=el.style.translate='';}
     el.classList.toggle('hid',e?!e.v:id==='tb-fire2');
   });
   $('tc').style.setProperty('--tbop',settings.tbOp||1);
