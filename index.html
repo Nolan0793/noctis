@@ -121,6 +121,9 @@ body{background:var(--bg);color:var(--fg);font-family:var(--display);overflow:hi
 .tb.on,.tb.cur{background:linear-gradient(150deg,rgba(160,228,255,.55),rgba(127,214,255,.22));border-color:rgba(200,240,255,.8);color:#fff;box-shadow:inset 0 1px 1px rgba(255,255,255,.6),0 0 16px rgba(127,214,255,.45)}
 .tb.pr{scale:.95;transition:scale .06s ease-out,background .1s}
 .noblur .tb,.noblur #joy{-webkit-backdrop-filter:none;backdrop-filter:none}
+/* every other button: the same subtle press, no blur */
+button:not(.tb){transition:scale .22s cubic-bezier(.3,1.35,.5,1),background-color .15s,border-color .15s,color .15s}
+button:not(.tb):not(:disabled):active{scale:.95;transition:scale .06s ease-out}
 .tb.fire{width:96px;height:96px;right:var(--sr);bottom:var(--sb);background:linear-gradient(150deg,rgba(255,170,120,.4),rgba(255,106,61,.14) 60%,rgba(255,138,61,.24));border-color:rgba(255,180,130,.6);font-size:16px}
 .tb.fire.on{background:linear-gradient(150deg,rgba(255,190,140,.7),rgba(255,120,61,.45));border-color:#ffc79a;box-shadow:inset 0 1px 1px rgba(255,255,255,.6),0 0 18px rgba(255,138,61,.55)}
 .tb.ads{width:64px;height:64px;right:calc(var(--sr) + 16px);bottom:calc(var(--sb) + 110px)}
@@ -5030,6 +5033,7 @@ function exitToMenu(){
   showOnly('menu');updateBestLine();
 }
 $('btn-resume').addEventListener('click',resume);
+document.addEventListener('touchstart',function(){},{passive:true});   /* lets :active fire on iOS taps */
 /* ---------- developer mode ---------- */
 var DEVN=[['god','무적'],['ammo','무한 탄약'],['fly','날아다니기'],['money','무한 돈'],['unl','무제한 총기 휴대']];
 function devBadge(){
