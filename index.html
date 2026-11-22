@@ -5038,12 +5038,12 @@ function exitToMenu(){
 $('btn-resume').addEventListener('click',resume);
 document.addEventListener('touchstart',function(){},{passive:true});   /* lets :active fire on iOS taps */
 /* press feedback: every button shrinks the instant it is touched (CSS :active is delayed on mobile);
-   the action itself still runs on release (normal click). Shop rows are the exception: they scroll, so they keep plain :active. */
+   the action itself still runs on release (normal click); if the finger starts scrolling, pointercancel lifts it again. */
 function tapScroller(b){for(var n=b.parentElement;n&&n!==document.body;n=n.parentElement){var cs=getComputedStyle(n);if(/(auto|scroll)/.test(cs.overflowY+cs.overflowX)&&(n.scrollHeight>n.clientHeight+2||n.scrollWidth>n.clientWidth+2))return true;}return false;}
 var PRB=null;
 document.addEventListener('pointerdown',function(e){
   var b=e.target&&e.target.closest&&e.target.closest('button');
-  if(!b||b.disabled||b.classList.contains('tb')||b.closest('#shop')||tapScroller(b))return;
+  if(!b||b.disabled||b.classList.contains('tb'))return;
   if(PRB)PRB.classList.remove('pr');PRB=b;b.classList.add('pr');
 },true);
 ['pointerup','pointercancel'].forEach(function(t){document.addEventListener(t,function(){if(PRB){var q=PRB;PRB=null;setTimeout(function(){q.classList.remove('pr');},60);}},true);});
